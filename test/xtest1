@@ -1,0 +1,7 @@
+#The first two lines are for the first time running this test:
+#  a roundabout way of generating the required files in the MyGenome/preparsed directory
+#  (so as to not interfere with multiple background findMotifsGenome.pl instantiations in
+#   the real job ...)
+ head -1 testpeakfile > scratchpeakfile
+ findMotifsGenome.pl scratchpeakfile ./TestGenome scratchmedir -size -60,40 -S 1 -noknown -nocheck -preparse; \rm -rf scratchpeakfile scratchmedir
+ time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10 >& errTEST1

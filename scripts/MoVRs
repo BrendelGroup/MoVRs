@@ -314,12 +314,9 @@ elif [[ $fastafile != '' ]] ; then
   else
     backgroundfile=$(readlink -f ${backgroundfile})
   fi
-# Split sizestring and remove [] characters:
-  start=${sizestring%,*}; start=${start##[};
-  end=${sizestring#*,}; end=${end%%]}
   echo ""
   echo "Going ahead with"
-  echo "  findMotifs.pl $fastafile fasta $outputdir -fasta $backgroundfile -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads"
+  echo "  findMotifs.pl $fastafile fasta $outputdir -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads"
   echo ""
   input=fastafile
 
@@ -513,8 +510,8 @@ if [ $runstep3 == 1 ] ; then
     fi
   
     if [[ $input == 'fastafile' ]] ; then
-      echo "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads"
-      sem -j $numproc "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads >& HOMERlogfile_${file}; echo done with findMotifsGenome.pl for ${file} ...;"
+      echo "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads"
+      sem -j $numproc "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads >& HOMERlogfile_${file}; echo done with findMotifsGenome.pl for ${file} ...;"
     fi
   
     if [[ $input == 'geneIDfile' ]] ; then
