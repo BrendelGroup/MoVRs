@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 10, 2016.  Volker Brendel.
+# Last update: August 11, 2016.  Volker Brendel.
 #
 
 debug=true
@@ -252,8 +252,9 @@ done
 
 
 numthreads=$(( $numproc / $kfold ))
+if [ $numthreads == 0 ] ; then numthreads=1 ; fi
 if [ $minpresence == 'default' ] ; then
-  minpresence=$((kfold-1))
+  minpresence=$(($kfold-1))
 fi
 
 if [[ $debug == 'true' ]] ; then
@@ -389,7 +390,7 @@ if [ $runstep1 == 1 ] ; then
   if [ ! -d "${outputdir}" ] ; then
     mkdir ${outputdir}
   fi
-  if [[ $minpresence > $kfold ]] ; then
+  if [[ $minpresence -gt $kfold ]] ; then
     echo "--minpresence argument must not exceed -k argument.  Adjusted to $kfold."
     minpresence=$kfold
   fi
