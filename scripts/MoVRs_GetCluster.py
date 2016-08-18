@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	for node in G.nodes():
 		if (node,node) in G.edges():
 			G.remove_edge(node,node)
-	
+
 	graphs = list(nx.connected_component_subgraphs(G))
 	mcluster = []
 	for each in graphs:
@@ -29,11 +29,11 @@ if __name__ == "__main__":
 		#extract connected components which contain at least args.threshold nodes from different training sets
 		if len(train_set)>= int(args.threshold):
 			mcluster.append(each)
-	print("There are %d mclusters identified\n" %(len(mcluster)))	
+	print("There are %d mclusters identified\n" %(len(mcluster)))
 	output = nx.Graph()
 	for each in mcluster:
 		output = nx.union(output,each)
-	
+
 	#output the files which contain nodes id in each extracted mcluster
 	nodes=[]
 	for each in mcluster:

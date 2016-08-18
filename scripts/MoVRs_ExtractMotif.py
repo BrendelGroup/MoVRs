@@ -18,7 +18,7 @@ def ParseMEME(filePath):
 	tabs = content.split('MOTIF')
 	for i in range(1,len(tabs)):
 		current = tabs[i]
-		title = 'MOTIF'+ current.split('\n')[0]	
+		title = 'MOTIF'+ current.split('\n')[0]
 		name = title.split(' ')[1]
 		tmp = current.split('\n')[0]+'\n'
 		motif = current.replace(tmp,'')
@@ -48,11 +48,11 @@ if __name__ == "__main__":
 
 	#extract motifs according to threshold
 	if args.motif_threshold:
-		threshold = float(args.motif_threshold)	
-		for key in motif_list.keys():
+		threshold = float(args.motif_threshold)
+		for key in list(motif_list):
 			content = motif_list[key]
 			if not check_threshold(content,threshold):
-                                del motif_list[key]				
+				del motif_list[key]
 
 
 	if args.motif_name:#extract motifs according to motif names in motif_name file
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 	else:
 		with open(args.out_file,'w') as ofile:
 			ofile.write('MEME version 4\n'+"ALPHABET= ACGT\n\n")
-  			mykeys = sorted_nicely(motif_list.keys())
- 			for each in mykeys:# the motif name in each group
+			mykeys = sorted_nicely(motif_list.keys())
+			for each in mykeys:# the motif name in each group
  				content = motif_list[each]
  				ofile.write(content)

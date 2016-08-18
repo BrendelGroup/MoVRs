@@ -31,7 +31,7 @@ class Consensus:
 				for i in range(4):
 					pwm += tmp[i]+"\t"
 				pwm += "\n"
-		
+
 		return motif_dic
 
 ###=======read motif consensus file and write output Homer file=========
@@ -47,5 +47,5 @@ if __name__ == "__main__":
 	with open(args.homer_file,"w") as fo:
 		for key in homer_dic.keys():
 			fo.write(homer_dic[key])
-	fo.close()	
+	fo.close()
 

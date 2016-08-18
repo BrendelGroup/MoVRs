@@ -29,7 +29,7 @@ for (i in 1:length(all_dat)){
 		fout<-paste(fin,"_",as.character(count),".png",sep="")
 		flag<-TRUE
 	}
-	if(flag){	
+	if(flag){
 		if (! grepl("DE",all_dat[i]) && !grepl("XX",all_dat[i]) ) {
 			tmp<-paste(tmp,all_dat[i],"\n",sep="")
 		}
