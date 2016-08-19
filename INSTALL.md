@@ -14,10 +14,10 @@ cd MoVRs/
 That said, an implicit assumption is that your local machine runs some version
 of Linux.  For genome-wide DNA motif finding you will likely work with large
 date sets.  The __open__ (source) MoVRs software will make the analysis of these
-data sets __easy, accurate, meaningful, reproducible, and scalable__ (our
-__RAMOSE__ philosophy and promise).  The output of MoVRs will be nicely
-organized but intermediate output files will be kept initially, so you will
-need sufficient disk space.  It will be up to you to specify the number of
+data sets __easy__, __accurate__, __meaningful__, __reproducible__, and
+__scalable__ (our __RAMOSE__ philosophy and promise).  The output of MoVRs will
+be nicely organized but intermediate output files will be kept initially, so you
+will need sufficient disk space.  It will be up to you to specify the number of
 processors to be used in various parallel steps during the workflow.  We like to
 have 4-10 processors dedicated to the task (although most of the time, fewer
 processors will be used).  Even then, be prepared to wait a few hours until all
