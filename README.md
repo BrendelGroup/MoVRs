@@ -1,5 +1,5 @@
 # MoVRs
-Motif set Reduction and Validation (MoVRs) - a workflow for the derivation of genome-wide DNA motif detection and vetting
+__Motif set Reduction and Validation (MoVRs) - a workflow for the derivation of genome-wide DNA motif detection and vetting__
 
 The MoVRs repository encompasses scripts we developed in the [Brendel Group](http://brendelgroup.org/) as an extension to widely used software for DNA motif finding in the pursuit of statistically sound and biologically meaningful predictions.
 
@@ -19,7 +19,7 @@ document.  Once all preparatory steps are taken care of, see the
 
 ## Reference
 
-Xianyu Yao, R. Taylor Raborn, and Volker P. Brendel (2016) _MoVRs: 
+Xianyu Yao, R. Taylor Raborn, and Volker P. Brendel (2016) _MoVRs:
 DNA motif set reduction and validation._ To be submitted.
 
 ## Contact
