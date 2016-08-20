@@ -36,13 +36,13 @@ track of the paths to the installed binaries.  Although quite a few external
 programs are involved, typical installation can be scripted (as described) and
 would not take more than a few minutes.
 
-MoVRs relies on a number of bash, python, and R scripts that are placed in
-the [scripts](./scripts) directory.  The python and R scripts use various
+MoVRs relies on a number of bash, Perl, python, and R scripts that are placed in
+the [scripts](./scripts) directory.  The Perl, python, and R scripts use various
 packages that must be pre-installed on your system.  Run the
-_xcheckprequisites_ bash script in the [scripts](./scripts) directory to see
+_xcheckprerequisites_ bash script in the [scripts](./scripts) directory to see
 what is available.  If packages are missing, you need to install them prior to
-running the MoVRs workflow (there are different ways to install python and R
-packages; if in doubt, ask your systems administrator).
+running the MoVRs workflow (there are different ways to install these packages;
+if in doubt, ask your systems administrator).
 
 ## Finally
 

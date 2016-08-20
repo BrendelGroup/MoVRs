@@ -1,0 +1,12 @@
+# MoVRs prerequisite check
+#
+#   Rscript checkRprerequisites
+#
+# will report errors if any of the following libraries cannot be found.
+#
+library(tools)
+library(grid)
+library(methods)
+library(seqLogo)
+
+cat("It looks like all required libraries are available.  Proceed!\n")
