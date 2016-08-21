@@ -77,18 +77,18 @@ echo "Ok - the basics are in place. Now let's check on particulars."
 echo "================================================================================"
 
 echo ""
-echo "Now running perl checkprerequisites.pl ..."
+echo "Now running bash checkprerequisites.pl ..."
 echo "If the script results in errors, then you will need to install required perl modules."
 echo "Check with your system administrator on how to do that."
 echo ""
-x=`perl checkprerequisites.pl 2>&1 > /dev/null | egrep "Can't locate" | wc -l`
+x=`bash checkprerequisites.pl 2>&1 > /dev/null | egrep "Can't locate" | wc -l`
 if [  $x -gt 0 ] ; then
 	echo ""
 	echo "One or more perl modules are not accessible."
 	echo "Please review the MoVRs INSTALL.md document."
 	exit 1
 else
-	perl checkprerequisites.pl
+	bash checkprerequisites.pl
 	echo ""
 	echo "It looks like all required modules are available.  Proceed!"
 fi
