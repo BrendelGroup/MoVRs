@@ -2,10 +2,10 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 20, 2016.  Volker Brendel.
+# Last update: August 21, 2016.  Volker Brendel.
 #
 
-debug=true
+debug=true	# set to true for code development
 shopt -s extglob
 
 
@@ -50,12 +50,26 @@ input="unclear"
 
 function usage() {
   echo "
-    Usage: $0 [options] file1 [dir2 ...]
+    Usage: $0 <input with either -a, -f, or -i> <genome and background settings> [options]
 
-    MoVRs is great.
-      step1:	read
-      step2:    generate training and validation sets.
+    Examples:
+      $0 -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10 >& errTEST1
+      $0 -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10 --minpresence 7 --startfromstep step5 >& errTEST1AGAIN
+      $0 -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
+      $0 -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
+      $0 -i testidfile -r human --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
 
+    MoVRs will determine candidate motifs in a several-steps workflow.  You can specify
+    partial workflow execution by specifying \"stepX\" [X = 1, 2, ..., 7] as argument to 
+    --startfromstep, --stopatstep, or --runonlystep.
+
+    Step 1  Setting up training and validation sets
+    Step 2  HOMER de novo motif finding in training sets
+    Step 3  Motif extraction, filtering, and comparison
+    Step 4  Generating motif clusters
+    Step 5  Derivation of consensus motifs
+    Step 6  MoVRs motif presentation and annotation
+    Step 7  Find MoVRs consensus motifs in regions of interest
 
     To see more help, type \"$0 -h\" or \"$0 --help\".
   "
@@ -88,7 +102,7 @@ function usage() {
         -S|--nummotifs <#>                HOMER argument for the number of motifs of each length to find) [Default: 25]
       3) MoVRs-specific options:
         -k <#>                            Conduct <#>-fold crossv-validation [Default: 10]
-        -p|--numproc <#>                  Use <#> processors during execution [Default: 1]
+        -p|--numproc <#>                  Use <#> processors during execution [Default: 1]; ideally a multipe of the -k argument.
         -m|--mmquality <1e-#>             Minimum motif quality for motif to be considered [Default: 1e-3]
         -t|--ttthreshold <1e-#>           Threshold for tomtom motif similarity [Default: 1e-3]
         --minpresence <#>                 Minimal number of training sets in which a MoVRs motif must occur [Default: -k argument minus 1]
@@ -104,17 +118,14 @@ function usage() {
   fi
 }
 
-if [ -z "$*" ]; then
-    usage short
-    exit 1
-fi
+if [ -z "$*" ] ; then usage short ; exit 1 ; fi
 
 
 ##### Process command line arguments: #####
 #
 
 OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
-if [ $? != 0 ] ; then echo " "; echo "Could not parse options (see above) ..." >&2 ; usage short; exit 1 ; fi
+if [ $? != 0 ] ; then echo " " ; echo "Could not parse options (see above) ..." >&2 ; usage short ; exit 1 ; fi
 
 eval set -- "$OPTIONS"
 
@@ -292,7 +303,9 @@ if [[ $peakorbedfile != '' ]] ; then
     exit
   fi
   echo ""
-  echo "Going ahead with"
+  echo "Going ahead with the MoVRs cross-validation and motif reduction aproach"
+  echo "for the following HOMER command (run this for output comparision if desired):"
+  echo ""
   if [[ $genomedir != '' ]] ; then
     genome=$(readlink -f ${genomedir})
   else
@@ -340,7 +353,6 @@ elif [[ $geneIDfile != '' ]]; then
 fi
 
 
-
 if [[ $startfromstep != '' ]] ; then
   i=-1
   for step in ${steps2run[@]} ; do
@@ -351,10 +363,9 @@ fi
 
 unsetflag=0
 if [[ $stopatstep != '' ]] ; then
-  i=-1
   for step in ${steps2run[@]} ; do
     ((++i))
-    if [[ $step == $stopatstep ]] ; then unsetflag=1 ;
+    if [[ $step == $stopatstep ]] ; then unsetflag=1 ; ((--i))
     else  if [[ $unsetflag == 1 ]] ; then unset steps2run[$i] ; fi ;  fi
   done
 fi
@@ -371,22 +382,35 @@ if [[ $debug == 'true' ]] ; then
   echo ""
 fi
 
-if [[ $debug == 'true' ]] ; then echo "steps2run: ${steps2run[*]}"; fi
+if [[ $debug == 'true' ]] ; then echo "steps2run: ${steps2run[*]}" ; fi
 
 
 #########################################
-#Step 1			                #
+#Step 0			                #
 #Setting up				#
 #########################################
 
+runstep0=1	# Step 0 will always be run (unless we change the code otherwise at some point)
 runstep1=0
+runstep2=0
+runstep3=0
+runstep4=0
+runstep5=0
+runstep6=0
+runstep7=0
 for step in ${steps2run[@]} ; do
-  if [[ $step == "step1" ]] ; then runstep1=1 ; break ; fi
+  if [[ $step == "step1" ]] ; then runstep1=1 ; fi
+  if [[ $step == "step2" ]] ; then runstep2=1 ; fi
+  if [[ $step == "step3" ]] ; then runstep3=1 ; fi
+  if [[ $step == "step4" ]] ; then runstep4=1 ; fi
+  if [[ $step == "step5" ]] ; then runstep5=1 ; fi
+  if [[ $step == "step6" ]] ; then runstep6=1 ; fi
+  if [[ $step == "step7" ]] ; then runstep7=1 ; fi
 done
 
-if [[ $debug == 'true' ]] ; then echo "runstep1: $runstep1" ; fi
-if [ $runstep1 == 1 ] ; then
-  echo "running step 1 ..."
+if [ $runstep0 == 1 ] ; then
+  echo ""
+  echo "MoVRs: Now running step 0 ..."
   if [ ! -d "${outputdir}" ] ; then
     mkdir ${outputdir}
   fi
@@ -394,27 +418,42 @@ if [ $runstep1 == 1 ] ; then
     echo "--minpresence argument must not exceed -k argument.  Adjusted to $kfold."
     minpresence=$kfold
   fi
-  echo "put in display of map here"
+  if [ $runstep1 == 1 ] ; then
+    echo "MoVRs: you will run step 1"
+  fi
+  if [ $runstep2 == 1 ] ; then
+    echo "MoVRs: you will run step 2"
+  fi
+  if [ $runstep3 == 1 ] ; then
+    echo "MoVRs: you will run step 3"
+  fi
+  if [ $runstep4 == 1 ] ; then
+    echo "MoVRs: you will run step 4"
+  fi
+  if [ $runstep5 == 1 ] ; then
+    echo "MoVRs: you will run step 5"
+  fi
+  if [ $runstep6 == 1 ] ; then
+    echo "MoVRs: you will run step 6"
+  fi
+  if [ $runstep7 == 1 ] ; then
+    echo "MoVRs: you will run step 7"
+  fi
   echo ""
+  echo "================================================================================"
 fi
 
 
 #########################################
-#Step 2			                #
+#Step 1			                #
 #Setting up training and validation sets#
 #########################################
 
-runstep2=0
-for step in ${steps2run[@]} ; do
-  if [[ $step == "step2" ]] ; then runstep2=1 ; break ; fi
-done
-if [[ $debug == 'true' ]] ; then echo "runstep2: $runstep2" ; fi
-
-if [ $runstep2 == 1 ] ; then
-  echo "running step 2 ..."
+if [ $runstep1 == 1 ] ; then
+  echo "MoVRs: Now running step 1 (setting up training and validation sets) ..."
+  echo ""
   cd ${workingdir}
-
-  echo "You have chosen $kfold-fold cross validation"
+  echo "You have chosen $kfold-fold cross-validation"
 
   if [ ! -d "${outputdir}/tmpValidationDir" ] ; then
     mkdir ${outputdir}/tmpValidationDir
@@ -423,22 +462,32 @@ if [ $runstep2 == 1 ] ; then
     mkdir ${outputdir}/tmpTrainingDir
   fi
 
-  echo "begin cross-validation process ------>"
-
   if [[ $input == 'peakorbedfile' ]] ; then
-    grep "^[^#]" $peakorbedfile > tmp.txt #ignore comment lines
+    grep "^[^#]" $peakorbedfile > tmp.txt	#ignore comment lines
     shuf -o tmp.new tmp.txt
-    bash $installdir/MoVRs_Split.sh tmp.new $kfold subset        #split peak files into k subsets of equal size
-    if [ "$?" -eq "1" ];then
-      echo "Something went wrong when using shuf and split"
+    echo ""
+    echo "MoVRs_Split.sh tmp.new $kfold subset ..."
+    echo ""
+    bash $installdir/MoVRs_Split.sh tmp.new $kfold subset	#split $peakorbedfile into k subsets of equal size
+    if [ "$?" -eq "1" ] ; then
+      echo "Fatal error running MoVRs_Split.sh.  Please check."
       exit 1
     fi
   fi
 
   if [[ $input == 'fastafile' ]] ; then
-    grep "^>" $fastafile | cut -c2- > tmp.txt #ignore comment lines
+    grep "^>" $fastafile | cut -c2- > tmp.txt	#ignore comment lines
     shuf -o tmp.new tmp.txt
-    bash $installdir/MoVRs_Split.sh tmp.new $kfold tmplist        #split peak files into k subsets of equal size
+    echo ""
+    echo "MoVRs_Split.sh tmp.new $kfold tmplist ..."
+    echo ""
+    bash $installdir/MoVRs_Split.sh tmp.new $kfold tmplist	#split $fastafile into k subsets of equal size
+    if [ "$?" -eq "1" ] ; then
+      echo "Fatal error running MoVRs_Split.sh.  Please check."
+      exit 1
+    fi
+    echo ""
+    echo "Using BLAST to create subset FASTA files ..."
     makeblastdb -in $fastafile -dbtype nucl -parse_seqids -out TMP
     for file in tmplist.[0-1][0-9] ; do
       blastdbcmd -db TMP -entry_batch $file > ${file/tmplist/subset}
@@ -447,22 +496,21 @@ if [ $runstep2 == 1 ] ; then
   fi
 
   if [[ $input == 'geneIDfile' ]] ; then
-    grep "^[^#]" $geneIDfile > tmp.txt #ignore comment lines
+    grep "^[^#]" $geneIDfile > tmp.txt	#ignore comment lines
     shuf -o tmp.new tmp.txt
-    bash $installdir/MoVRs_Split.sh tmp.new $kfold subset        #split peak files into k subsets of equal size
-    if [ "$?" -eq "1" ];then
-      echo "Something went wrong when using shuf and split"
+    echo ""
+    echo "MoVRs_Split.sh tmp.new $kfold subset ..."
+    echo ""
+    bash $installdir/MoVRs_Split.sh tmp.new $kfold subset	#split $geneIDfile into k subsets of equal size
+    if [ "$?" -eq "1" ] ; then
+      echo "Fatal error running MoVRs_Split.sh.  Please check."
       exit 1
     fi
   fi
 
-  if [[ $input == 'fastafile' ]] ; then
-    grep "^>" $fastafile | cut -c2- > tmp.txt #ignore comment lines
-  fi
-
   for file in subset* ; do
     mv $file ${file/./}
-  done  #change file name e.g. subset.01 changed into subset01
+  done	#change file name e.g. subset.01 changed into subset01
   mv subset* ${outputdir}/tmpValidationDir
   \rm tmp.txt tmp.new
 
@@ -470,38 +518,29 @@ if [ $runstep2 == 1 ] ; then
 
   for file in subset[0-1][0-9] ; do
     cat -- !($file) > ../tmpTrainingDir/${file/subset/trainingSet}
-  done   # concatenate remaining files as training set in each round
+  done	# concatenate remaining files as training sets, leaving one subset out in turn
 
   cd ..
-
-  if [ "$?" -eq "1" ] ; then
-  	echo "Woops, something wrong happened when making training sets!"
-  	echo ""
-  	exit 1
-  else
-  	echo "Random separation of peak file for cross-validation is completed!"
-	echo ""
-  fi
+  echo ""
+  echo "MoVRs: Done with step 1 (setting up training and validation sets)."
+  echo "       Output from this step is in directories ${outputdir}/tmpTrainingDir"
+  echo "       and ${outputdir}/tmpValidationDir."
+  echo ""
+  echo "================================================================================"
 fi
 
 
 #########################################################
-#Step 3							#
+#Step 2							#
 #Use HOMER to predict motifs in regions in training set #
 #########################################################
 
-runstep3=0
-for step in ${steps2run[@]} ; do
-  if [[ $step == "step3" ]] ; then runstep3=1 ; break ; fi
-done
-if [[ $debug == 'true' ]] ; then echo "runstep3: $runstep3" ; fi
-
-if [ $runstep3 == 1 ] ; then
-  echo "running step 3 ..."
+if [ $runstep2 == 1 ] ; then
+  echo "MoVRs: Now running step 2 (HOMER de novo motif finding in training sets) ..."
+  echo ""
   cd ${workingdir}
 
   cd ${outputdir}/tmpTrainingDir
-  echo "begin HOMER --->"
   for file in trainingSet[0-1][0-9] ; do
 
     if [[ $input == 'peakorbedfile' ]] ; then
@@ -521,7 +560,6 @@ if [ $runstep3 == 1 ] ; then
 
   done
   sem --wait
-  echo "... done with HOMER motif-finding for all training sets."
 
   if [ ! -d "../tmpMotifDir" ] ; then
     mkdir ../tmpMotifDir
@@ -532,61 +570,53 @@ if [ $runstep3 == 1 ] ; then
     cp HOMER_${file}/homerMotifs.all.motifs ../tmpMotifDir/${file}motifs.homer
   done
   cd ..
+  echo ""
+  echo "MoVRs: Done with step 2 (HOMER de novo motif finding in training sets)."
+  echo "       Output from this step is in directory ${outputdir}/tmpMotifDir."
+  echo ""
+  echo "================================================================================"
 fi
 
 
 ########################################################
-#Step 4						       #
+#Step 3						       #
 #Convert homer motif to meme format and run Tomtom     #
 ########################################################
 
-runstep4=0
-for step in ${steps2run[@]} ; do
-  if [[ $step == "step4" ]] ; then runstep4=1 ; break ; fi
-done
-if [[ $debug == 'true' ]] ; then echo "runstep4: $runstep4" ; fi
-
-if [ $runstep4 == 1 ] ; then
-  echo "running step 4 ..."
+if [ $runstep3 == 1 ] ; then
+  echo "MoVRs: Now running step 3 (motif extraction, filtering, and comparison) ..."
+  echo ""
   cd ${workingdir}
 
   cd ${outputdir}/tmpMotifDir
   for file in *motifs.homer ; do
+    echo "Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}"
     Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}
-  done
-  #process the raw_homer motif to meme format
+  done	# convert HOMER motifs to meme format
   AllMotifsFile="AllMotifs.meme"
   cat trainingSet*.meme > ${AllMotifsFile}
-  if [ "$?" -eq "0" ];then
-  	echo "Format transformation succeed"
-  else
-  	echo "There are errors in homer to meme format processing"
-         	exit 1
-  fi
 
-  #filter meme motifs
   FilteredMotifsFile="FilteredMotifs.meme"
+  echo ""
+  echo "python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}"
   python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}
-  #get the full path name for FilteredMotifsFile:
-  FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
   if [ "$?" -eq "1" ] ; then
-  	echo "Something goes wrong trying to filter raw motifs with specfic theshold"
+    echo "Fatal error running MoVRs_ExtractMotif.py.  Please check."
+    exit 1
   else
-  	echo "Succeed filtering raw motifs"
+    echo "... done"
   fi
+  echo ""
 
-  #tomtom comparison of motifs in meme format
+  FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
+  echo ""
+  echo "tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile"
   tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile
   if [ "$?" -eq "1" ] ; then
-  	echo "Something went wrong trying to use tomtom!"
-  	if [ -d "tomtom_out" ];then
-  		echo " we still continue to analyze"
-  	else
-  		echo " we can not continue without tomtom.txt"
-  		exit 1
-  	fi
+    echo "Fatal error running tomtom.  Please check."
+    exit 1
   else
-  	echo "tomtom motif comparison is completed!"
+    echo "... done"
   fi
   #Let's clear out any old results if still present:
   #
@@ -595,27 +625,28 @@ if [ $runstep4 == 1 ] ; then
   fi
   mv tomtom_out TOMTOMresults
   cd ..
+  echo ""
+  echo "MoVRs: Done with step 3 (motif extraction, filtering, and comparison)."
+  echo "       Output from this step is in directories ${outputdir}/tmpMotifDir"
+  echo "       and ${outputdir}/tmpMotifDir/TOMTOMresults."
+  echo ""
+  echo "================================================================================"
 fi
 
 
 ######################################################
-#Step 5						     #
+#Step 4						     #
 #Graphical clustering of training motifs             #
 ######################################################
 
-runstep5=0
-for step in ${steps2run[@]} ; do
-  if [[ $step == "step5" ]] ; then runstep5=1 ; break ; fi
-done
-if [[ $debug == 'true' ]] ; then echo "runstep5: $runstep5" ; fi
-
-if [ $runstep5 == 1 ] ; then
-  echo "running step 5 ..."
+if [ $runstep4 == 1 ] ; then
+  echo "MoVRs: Now running step 4 (generating motif clusters) ..."
+  echo ""
   cd ${workingdir}
 
   cd ${outputdir}/tmpMotifDir
-  if [ ! -d "MCLUSTERresults" ];then
-  	mkdir MCLUSTERresults
+  if [ ! -d "MCLUSTERresults" ] ; then
+    mkdir MCLUSTERresults
   fi
   FilteredMotifsFile="FilteredMotifs.meme"
   FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
@@ -625,92 +656,82 @@ if [ $runstep5 == 1 ] ; then
   cd MCLUSTERresults
   echo "MCLUSTERresults contains results of motif clustering and merging" >> README.txt
   #extract motif clusters in graph
+  echo "python ${installdir}/MoVRs_GetCluster.py -i motifgraph_edgelist -t $minpresence"
   python ${installdir}/MoVRs_GetCluster.py -i motifgraph_edgelist -t $minpresence
-  if [ "$?" -eq "1" ];then
-  	echo "Woops, something goes wrong when trying to extract mclusters from motif similarity graph!"
-  	echo ""
-  	exit 1
-  else
-  	echo "Succeed extract motif clusters from motif similarity graph!"
+  if [ "$?" -eq "1" ] ; then
+    echo "Fatal error running MoVRs_GetCluster.py.  Please check."
+    echo ""
+    exit 1
   fi
 
-  # check if any motif clusters are extracted
   mclusters=$(ls mcluster*.list)
   if [[ $mclusters ]]; then
-  	echo "there are mclusters extracted"
+    echo "... motif clusters were successfully extracted."
   else
-  	echo "No mclusters extracted, program halted"
-  	exit 0
+    echo "No motif clusters were extracted. Please check output in ${outputdir}/tmpMotifDir/MCLUSTERresults."
+    exit 0
   fi
-  echo "mcluster*.meme are meme motif extracted from similarity graph" >> README.txt
 
-  #generate motif group files in meme format
-  for file in mcluster*.list;
-  do
-  	echo "python ${installdir}/MoVRs_ExtractMotif.py -i ${FilteredMotifsFileFP} -n $file -o ${file/list/meme}"
-  	python ${installdir}/MoVRs_ExtractMotif.py -i ${FilteredMotifsFileFP} -n $file -o ${file/list/meme}
-  	echo "Trying to extract motifs in $file from raw motif set"
+  for file in mcluster*.list ; do
+    echo "python ${installdir}/MoVRs_ExtractMotif.py -i ${FilteredMotifsFileFP} -n $file -o ${file/list/meme}"
+    python ${installdir}/MoVRs_ExtractMotif.py -i ${FilteredMotifsFileFP} -n $file -o ${file/list/meme}
+    if [ "$?" -eq "1" ] ; then
+      echo "Fatal error running MoVRs_ExtractMotif.py.  Please check."
+      echo ""
+      exit 1
+    fi
   done
+  echo "mcluster*.meme are meme motifs extracted from similarity graph clusters." >> README.txt
 
-  if [ "$?" -eq "1" ];then
-  	echo "Something went wrong when trying to extract motifs in clusters!"
-  	echo ""
-  	exit 1
-  else
-  	echo "Succeed extracting motifs in each cluster"
-  fi
   cd ../..
+  echo ""
+  echo "MoVRs: Done with step 4 (generating motif clusters)."
+  echo "       Output from this step is in directory ${outputdir}/tmpMotifDir/MCLUSTERresults."
+  echo ""
+  echo "================================================================================"
 fi
 
 
 ##########################################
-#Step 6 				 #
+#Step 5 				 #
 #generate consensus motif for each group #
 ##########################################
 
-runstep6=0
-for step in ${steps2run[@]} ; do
-  if [[ $step == "step6" ]] ; then runstep6=1 ; break ; fi
-done
-if [[ $debug == 'true' ]] ; then echo "runstep6: $runstep6" ; fi
-
-if [ $runstep6 == 1 ] ; then
-  echo "running step 6 ..."
+if [ $runstep5 == 1 ] ; then
+  echo "MoVRs: Now running step 5 (derivation of consensus motifs) ..."
+  echo ""
   cd ${workingdir}
 
   cd ${outputdir}/tmpMotifDir/MCLUSTERresults
   echo "mcluster.*cmotif contains the consensus motifs for each mcluster" >> README.txt
 
-  for file in mcluster*.meme;
-  do
-  	echo "Trying to generate consensus motifs for $file ..."
-  	${installdir}/MoVRs_MotifSetReduce.pl -m $file > ${file/meme/cmotif}
-  	echo "Succeed generating consensus motifs for $file !"
-  	echo ""
+  for file in mcluster*.meme ; do
+    echo "${installdir}/MoVRs_MotifSetReduce.pl -m $file > ${file/meme/cmotif}"
+    ${installdir}/MoVRs_MotifSetReduce.pl -m $file > ${file/meme/cmotif}
+    if [ "$?" -eq "1" ] ; then
+      echo "Fatal error running MoVRs_MotifSetReduce.pl.  Please check."
+      echo ""
+      exit 1
+    fi
   done
 
-  if [ "$?" -eq "1" ];then
-  	echo "Something goes wrong when trying to generate consensus motifs"
-  else
-  	echo "Finish generating consensus motif. Our Job is completed!"
-  fi
   cd ../..
+  echo ""
+  echo "MoVRs: Done with step 5 (derivation of consensus motifs)."
+  echo "       Output from this step is in directory ${outputdir}/tmpMotifDir/MCLUSTERresults."
+  echo ""
+  echo "================================================================================"
 fi
 
 
 ##################################################################
-#Step 7							 	 #
+#Step 6							 	 #
 #Convert consensus motif to homer format and run compareMotifs.pl#
 ##################################################################
 
-runstep7=0
-for step in ${steps2run[@]} ; do
-  if [[ $step == "step7" ]] ; then runstep7=1 ; break ; fi
-done
-if [[ $debug == 'true' ]] ; then echo "runstep7: $runstep7" ; fi
-
-if [ $runstep7 == 1 ] ; then
-  echo "running step 7 ..."
+if [ $runstep6 == 1 ] ; then
+  echo "MoVRs: Now running step 6 (MoVRs motif presentation and annotation) ..."
+  echo ""
   cd ${workingdir}
   if [ ! -d "${outputdir}/MoVRs_OutputDir" ] ; then
     mkdir ${outputdir}/MoVRs_OutputDir
@@ -718,12 +739,16 @@ if [ $runstep7 == 1 ] ; then
 
   cd ${outputdir}/tmpMotifDir/MCLUSTERresults
 
-  for file in *.cmotif; do
-#generate SeqLogo for each consensus motif
+  for file in *.cmotif ; do
     echo "Rscript ${installdir}/MoVRs_SeqLogo4mcluster.R $file ../../MoVRs_OutputDir"
     Rscript ${installdir}/MoVRs_SeqLogo4mcluster.R $file ../../MoVRs_OutputDir
     echo "python ${installdir}/MoVRs_Consensus2homer.py -i $file -o ../../MoVRs_OutputDir/${file/cmotif/homer}"
     python ${installdir}/MoVRs_Consensus2homer.py -i $file -o ../../MoVRs_OutputDir/${file/cmotif/homer}
+    if [ "$?" -eq "1" ] ; then
+      echo "Fatal error running MoVRs_Consensus2homer.py.  Please check."
+      echo ""
+      exit 1
+    fi
   done
 
   cd ../../MoVRs_OutputDir
@@ -736,13 +761,28 @@ if [ $runstep7 == 1 ] ; then
   done
   sem --wait
 
-  echo "Annotation of the predicted motifs is completed. Check the html files for detail"
+  echo ""
+  echo "MoVRs: Done with step 6 (MoVRs motif presentation and annotation)."
+  echo "       Output from this step is in directory ${outputdir}/MoVRs_OutputDir."
+  echo ""
+  echo "================================================================================"
 fi
 
+
+##################################################################
+#Step 7							 	 #
+#Find MoVRs consensus motifs in regions of interest              #
+##################################################################
+
+if [ $runstep7 == 1 ] ; then
+  echo "MoVRs: Now running step 7 ..."
+  echo ""
+  cd ${workingdir}
+  echo "yet to be written = locate motifs"
+  echo ""
+  echo "================================================================================"
+fi
 exit
-
-
-
 
 
 ##########################################################

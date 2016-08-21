@@ -83,7 +83,7 @@ motif2meme <- function(inFile,outFile) {
   cat("\n",file=thisFile, append=TRUE)
   sink()
   close(thisFile) 
-  print("matrix has been converted to MEME")
+  cat("... done converting from HOMER to MEME motif format")
 }
 
 #parse command line argument and run this function
