@@ -1,0 +1,205 @@
+#!/bin/bash
+#
+# xcheckprerequisites - a bash script to check on the installation of
+#  software and packages required by MoVRs
+#
+clear
+echo "This script should stop when it encounters a missing piece for the"
+echo "MoVRs workflow.  You will have to make adjustments first, then try"
+echo "again.  Let us know if the INSTALL.md instructions are not clear."
+echo ""
+
+echo "================================================================================"
+
+echo ""
+echo "Now checking on installation of some basic Linux functionality ..."
+echo ""
+type shuf
+if [ "$?" -eq "1" ] ; then
+	echo "shuf is not available."
+	echo "Please check that 'GNU coreutils' is installed on your system."
+	exit 1
+else
+	which shuf
+	echo "  is in your PATH"
+fi
+
+echo ""
+type sem
+if [ "$?" -eq "1" ] ; then
+	echo "sem aka. parallel --semaphore is not available."
+	echo "Please check that 'GNU parallel' installed on your system."
+	exit 1
+else
+	which sem
+	echo "  is in your PATH"
+fi
+
+
+echo ""
+type perl 
+if [ "$?" -eq "1" ] ; then
+	echo "perl is not available."
+	echo "Please check that 'perl' installed on your system."
+	exit 1
+else
+	perl --version
+	echo "  is in your PATH"
+fi
+echo ""
+
+type python
+if [ "$?" -eq "1" ] ; then
+	echo "python is not available."
+	echo "Please check that 'R' installed on your system."
+	exit 1
+else
+	python --version
+	echo "  is in your PATH"
+	echo "To run MoVRs, you will need python version 2.7.10 or higher 2.7 version."
+	echo "See MoVRs src directory for one suggestion on how to customize a python environment."
+fi
+
+echo ""
+type Rscript
+if [ "$?" -eq "1" ] ; then
+	echo "Rscript is not available."
+	echo "Please check that 'R' installed on your system."
+	exit 1
+else
+	which Rscript
+	echo "  is in your PATH"
+fi
+
+echo ""
+echo ""
+echo "Ok - the basics are in place. Now let's check on particulars."
+echo "================================================================================"
+
+echo ""
+echo "Now running perl checkprerequisites.pl ..."
+echo "If the script results in errors, then you will need to install required perl modules."
+echo "Check with your system administrator on how to do that."
+echo ""
+x=`perl checkprerequisites.pl 2>&1 > /dev/null | egrep "Can't locate" | wc -l`
+if [  $x -gt 0 ] ; then
+	echo ""
+	echo "One or more perl modules are not accessible."
+	echo "Please review the MoVRs INSTALL.md document."
+	exit 1
+else
+	perl checkprerequisites.pl
+	echo ""
+	echo "It looks like all required modules are available.  Proceed!"
+fi
+echo "================================================================================"
+
+echo ""
+echo "Now running python checkprerequisites.py ..."
+echo "If the script results in errors, then you will need to install required python packages."
+echo "Check with your system administrator on how to do that."
+echo ""
+python checkprerequisites.py
+if [ "$?" -eq "1" ] ; then
+	echo ""
+	echo "One or more python packages are not accessible."
+	echo "Please review the MoVRs INSTALL.md document."
+	exit 1
+fi
+echo "================================================================================"
+
+echo ""
+echo "Now running Rscript checkRprerequisites ..."
+echo "If the script results in errors, then you will need to install required R libraries."
+echo "Check with your system administrator on how to do that."
+echo ""
+Rscript checkRprerequisites
+if [ "$?" -eq "1" ] ; then
+	echo ""
+	echo "One or more R packages are not accessible."
+	echo "Please review the MoVRs INSTALL.md document."
+	exit 1
+fi
+echo "================================================================================"
+
+
+echo ""
+echo ""
+echo "Ok - all required Perl, python, and R modules are in place. Now let's check on other software."
+echo "================================================================================"
+
+echo ""
+type meme
+if [ "$?" -eq "1" ] ; then
+	echo "meme is not installed or not added to your path variable."
+	echo "Please review the MoVRs INSTALL.md document."
+	exit 1
+else
+	which meme
+	echo "  is in your PATH"
+fi
+
+echo ""
+type tomtom
+if [ "$?" -eq "1" ]; then
+	echo "tomtom from the meme package is not installed or not added to your path variable."
+	echo "Please review the MoVRs INSTALL.md document."
+	exit 1
+else
+	which tomtom
+	echo "  is in your PATH"
+fi
+
+echo ""
+type seqlogo
+if [ "$?" -eq "1" ]; then
+	echo "seqlogo from the weblogo package is not installed or not added to your path variable."
+	echo "Please review the MoVRs INSTALL.md document."
+	exit 1
+else
+	which seqlogo
+	echo "  is in your PATH"
+fi
+
+echo ""
+echo "Checking on HOMER scripts:"
+echo ""
+type annotatePeaks.pl findMotifs.pl findMotifsGenome.pl
+if [ "$?" -eq "1" ] ; then
+	echo "HOMER not correctly configured. bin folder should be added to environment path"	
+	exit 1
+else
+	which annotatePeaks.pl findMotifs.pl findMotifsGenome.pl
+	echo "  are in your PATH"
+fi
+
+echo ""
+echo ""
+echo "Ok - all required software seems to be accesible. Now let's check on MoVRs."
+echo "================================================================================"
+
+echo ""
+
+# MoVRs
+type MoVRs MoVRs_Consensus2homer.py MoVRs_ExtractMotif.py MoVRs_GetCluster.py MoVRs_Motif2meme.R MoVRs_MotifSetReduce.pl MoVRs_SeqLogo4mcluster.R MoVRs_Split.sh
+if [ "$?" -eq "1" ];then
+	echo "The bin/ directory is not added to PYTHONPATH"
+	exit 1
+else
+	which MoVRs MoVRs_Consensus2homer.py MoVRs_ExtractMotif.py MoVRs_GetCluster.py MoVRs_Motif2meme.R MoVRs_MotifSetReduce.pl MoVRs_SeqLogo4mcluster.R MoVRs_Split.sh
+	echo "  are in your PATH"
+fi
+
+echo "================================================================================"
+echo "================================================================================"
+echo ""
+echo ""
+echo "Great.  Everything seems to have been installed nicely."
+echo "You should be able to proceed to the instructions in the MoVRs HOWTO.md document"
+echo "and test and apply MoVRs."
+echo ""
+echo "We would still recommend that you scroll over the messages printed out by this"
+echo "script and confirm that everything is to your liking."
+
+echo ""
+
