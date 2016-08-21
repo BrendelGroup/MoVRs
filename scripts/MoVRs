@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 11, 2016.  Volker Brendel.
+# Last update: August 20, 2016.  Volker Brendel.
 #
 
 debug=true
@@ -66,10 +66,10 @@ function usage() {
         1a) -a/-g or -a/-G combination    (peak or BED file and genome file or identifier)
         1b) -f/-b combination             (FASTA target and background files)
         1c) -i/-r combination             (GeneID file and preprocessed promoter set)
-        
+
       Other options default to the specified values if not set.
       Details:
-      
+
       1a) peak or BED file input to HOMER:
         -a|--annotation <peak|BED file>   Input file specifying genomic regions of interest
         -b|--background <peak|BED file>   (Non-mandatory) file specifying background regions
@@ -376,7 +376,7 @@ if [[ $debug == 'true' ]] ; then echo "steps2run: ${steps2run[*]}"; fi
 
 #########################################
 #Step 1			                #
-#Setting up #
+#Setting up				#
 #########################################
 
 runstep1=0
@@ -414,17 +414,17 @@ if [ $runstep2 == 1 ] ; then
   echo "running step 2 ..."
   cd ${workingdir}
 
-  echo "You have chosen $kfold-fold cross validation" 
-  
+  echo "You have chosen $kfold-fold cross validation"
+
   if [ ! -d "${outputdir}/tmpValidationDir" ] ; then
     mkdir ${outputdir}/tmpValidationDir
   fi
   if [ ! -d "${outputdir}/tmpTrainingDir" ] ; then
     mkdir ${outputdir}/tmpTrainingDir
   fi
-  
+
   echo "begin cross-validation process ------>"
-  
+
   if [[ $input == 'peakorbedfile' ]] ; then
     grep "^[^#]" $peakorbedfile > tmp.txt #ignore comment lines
     shuf -o tmp.new tmp.txt
@@ -434,18 +434,18 @@ if [ $runstep2 == 1 ] ; then
       exit 1
     fi
   fi
-  
+
   if [[ $input == 'fastafile' ]] ; then
     grep "^>" $fastafile | cut -c2- > tmp.txt #ignore comment lines
     shuf -o tmp.new tmp.txt
     bash $installdir/MoVRs_Split.sh tmp.new $kfold tmplist        #split peak files into k subsets of equal size
     makeblastdb -in $fastafile -dbtype nucl -parse_seqids -out TMP
-    for file in tmplist.[0-1][0-9] ; do 
+    for file in tmplist.[0-1][0-9] ; do
       blastdbcmd -db TMP -entry_batch $file > ${file/tmplist/subset}
     done
     \rm TMP.* tmplist.[0-1][0-9]
   fi
-  
+
   if [[ $input == 'geneIDfile' ]] ; then
     grep "^[^#]" $geneIDfile > tmp.txt #ignore comment lines
     shuf -o tmp.new tmp.txt
@@ -455,38 +455,38 @@ if [ $runstep2 == 1 ] ; then
       exit 1
     fi
   fi
-  
+
   if [[ $input == 'fastafile' ]] ; then
     grep "^>" $fastafile | cut -c2- > tmp.txt #ignore comment lines
   fi
-  
-  for file in subset* ; do 
+
+  for file in subset* ; do
     mv $file ${file/./}
   done  #change file name e.g. subset.01 changed into subset01
   mv subset* ${outputdir}/tmpValidationDir
   \rm tmp.txt tmp.new
-  
+
   cd ${outputdir}/tmpValidationDir
-  
-  for file in subset[0-1][0-9] ; do 
+
+  for file in subset[0-1][0-9] ; do
     cat -- !($file) > ../tmpTrainingDir/${file/subset/trainingSet}
   done   # concatenate remaining files as training set in each round
 
   cd ..
-  
+
   if [ "$?" -eq "1" ] ; then
   	echo "Woops, something wrong happened when making training sets!"
   	echo ""
   	exit 1
   else
   	echo "Random separation of peak file for cross-validation is completed!"
-	echo ""	
+	echo ""
   fi
-fi 
+fi
 
 
 #########################################################
-#Step 3							#		
+#Step 3							#
 #Use HOMER to predict motifs in regions in training set #
 #########################################################
 
@@ -500,43 +500,35 @@ if [ $runstep3 == 1 ] ; then
   echo "running step 3 ..."
   cd ${workingdir}
 
-  #use HOMER script findMotifsGenome.pl to predict novel motifs in 
   cd ${outputdir}/tmpTrainingDir
-  echo "begin HOMER findMotifsGenome.pl --->"
-  for file in trainingSet[0-1][0-9] ; do	
-  
+  echo "begin HOMER --->"
+  for file in trainingSet[0-1][0-9] ; do
+
     if [[ $input == 'peakorbedfile' ]] ; then
       echo "findMotifsGenome.pl $file $genome HOMER_${file} -len $lengthstring -size $sizestring -p $numthreads"
       sem -j $numproc "findMotifsGenome.pl $file $genome HOMER_${file} -len $lengthstring -size $sizestring -p $numthreads >& HOMERlogfile_${file}; echo  done with findMotifsGenome.pl for ${file} ...;"
     fi
-  
+
     if [[ $input == 'fastafile' ]] ; then
       echo "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads"
       sem -j $numproc "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads >& HOMERlogfile_${file}; echo done with findMotifsGenome.pl for ${file} ...;"
     fi
-  
+
     if [[ $input == 'geneIDfile' ]] ; then
       echo "  findMotifs.pl $file $promoterset HOMER_${file} -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads"
       sem -j $numproc "findMotifs.pl $file $promoterset HOMER_${file} -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads >& HOMERlogfile_${file}; echo  done with findMotifsGenome.pl for $file} ...;"
     fi
-  
+
   done
   sem --wait
-  
-  if [ "$?" -eq "1" ];then
-  	echo "Oh, something wrong when finding motifs all training sets!"
-  	echo ""
-  	exit 1
-  else
-  	echo "Motif finding for all training sets is completed!"
-  fi
-  
+  echo "... done with HOMER motif-finding for all training sets."
+
   if [ ! -d "../tmpMotifDir" ] ; then
     mkdir ../tmpMotifDir
   fi
-  echo "tmpMotifDir contains homer motifs for all training sets" >> ../tmpMotifDir/README.txt
-  
-  for file in trainingSet[0-1][0-9] ; do 
+  echo "... the HOMER output is in directory tmpMotifDir." >> ../tmpMotifDir/README.txt
+
+  for file in trainingSet[0-1][0-9] ; do
     cp HOMER_${file}/homerMotifs.all.motifs ../tmpMotifDir/${file}motifs.homer
   done
   cd ..
@@ -557,22 +549,22 @@ if [[ $debug == 'true' ]] ; then echo "runstep4: $runstep4" ; fi
 if [ $runstep4 == 1 ] ; then
   echo "running step 4 ..."
   cd ${workingdir}
-  
+
   cd ${outputdir}/tmpMotifDir
   for file in *motifs.homer ; do
     Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}
-  done	
+  done
   #process the raw_homer motif to meme format
   AllMotifsFile="AllMotifs.meme"
   cat trainingSet*.meme > ${AllMotifsFile}
-  if [ "$?" -eq "0" ];then 
-  	echo "Format transformation succeed" 
+  if [ "$?" -eq "0" ];then
+  	echo "Format transformation succeed"
   else
   	echo "There are errors in homer to meme format processing"
-         	exit 1	
+         	exit 1
   fi
-  
-  #filter meme motifs 
+
+  #filter meme motifs
   FilteredMotifsFile="FilteredMotifs.meme"
   python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}
   #get the full path name for FilteredMotifsFile:
@@ -582,7 +574,7 @@ if [ $runstep4 == 1 ] ; then
   else
   	echo "Succeed filtering raw motifs"
   fi
-  
+
   #tomtom comparison of motifs in meme format
   tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile
   if [ "$?" -eq "1" ] ; then
@@ -596,13 +588,18 @@ if [ $runstep4 == 1 ] ; then
   else
   	echo "tomtom motif comparison is completed!"
   fi
+  #Let's clear out any old results if still present:
+  #
+  if [ -d "TOMTOMresults" ] ; then
+    \rm -rf TOMTOMresults
+  fi
   mv tomtom_out TOMTOMresults
   cd ..
-fi 
+fi
 
 
 ######################################################
-#Step 5						     #			
+#Step 5						     #
 #Graphical clustering of training motifs             #
 ######################################################
 
@@ -622,7 +619,7 @@ if [ $runstep5 == 1 ] ; then
   fi
   FilteredMotifsFile="FilteredMotifs.meme"
   FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
-  
+
   cut -f 1,2 TOMTOMresults/tomtom.txt > motifgraph_edgelist
   mv motifgraph_edgelist MCLUSTERresults/
   cd MCLUSTERresults
@@ -636,25 +633,25 @@ if [ $runstep5 == 1 ] ; then
   else
   	echo "Succeed extract motif clusters from motif similarity graph!"
   fi
-  
-  # check if any motif clusters are extracted 
+
+  # check if any motif clusters are extracted
   mclusters=$(ls mcluster*.list)
   if [[ $mclusters ]]; then
-  	echo "there are mclusters extracted" 
+  	echo "there are mclusters extracted"
   else
-  	echo "No mclusters extracted, program halted" 
+  	echo "No mclusters extracted, program halted"
   	exit 0
   fi
-  echo "mcluster*.meme are meme motif extracted from similarity graph" >> README.txt	
-  
+  echo "mcluster*.meme are meme motif extracted from similarity graph" >> README.txt
+
   #generate motif group files in meme format
   for file in mcluster*.list;
-  do 
+  do
   	echo "python ${installdir}/MoVRs_ExtractMotif.py -i ${FilteredMotifsFileFP} -n $file -o ${file/list/meme}"
   	python ${installdir}/MoVRs_ExtractMotif.py -i ${FilteredMotifsFileFP} -n $file -o ${file/list/meme}
   	echo "Trying to extract motifs in $file from raw motif set"
-  done 
-  
+  done
+
   if [ "$?" -eq "1" ];then
   	echo "Something went wrong when trying to extract motifs in clusters!"
   	echo ""
@@ -683,15 +680,15 @@ if [ $runstep6 == 1 ] ; then
 
   cd ${outputdir}/tmpMotifDir/MCLUSTERresults
   echo "mcluster.*cmotif contains the consensus motifs for each mcluster" >> README.txt
-  
+
   for file in mcluster*.meme;
-  do 
+  do
   	echo "Trying to generate consensus motifs for $file ..."
   	${installdir}/MoVRs_MotifSetReduce.pl -m $file > ${file/meme/cmotif}
   	echo "Succeed generating consensus motifs for $file !"
   	echo ""
   done
-  
+
   if [ "$?" -eq "1" ];then
   	echo "Something goes wrong when trying to generate consensus motifs"
   else
@@ -702,7 +699,7 @@ fi
 
 
 ##################################################################
-#Step 7							 #	
+#Step 7							 	 #
 #Convert consensus motif to homer format and run compareMotifs.pl#
 ##################################################################
 
@@ -718,19 +715,19 @@ if [ $runstep7 == 1 ] ; then
   if [ ! -d "${outputdir}/MoVRs_OutputDir" ] ; then
     mkdir ${outputdir}/MoVRs_OutputDir
   fi
-  
+
   cd ${outputdir}/tmpMotifDir/MCLUSTERresults
-  
-  for file in *.cmotif; do 
+
+  for file in *.cmotif; do
 #generate SeqLogo for each consensus motif
     echo "Rscript ${installdir}/MoVRs_SeqLogo4mcluster.R $file ../../MoVRs_OutputDir"
     Rscript ${installdir}/MoVRs_SeqLogo4mcluster.R $file ../../MoVRs_OutputDir
     echo "python ${installdir}/MoVRs_Consensus2homer.py -i $file -o ../../MoVRs_OutputDir/${file/cmotif/homer}"
     python ${installdir}/MoVRs_Consensus2homer.py -i $file -o ../../MoVRs_OutputDir/${file/cmotif/homer}
   done
-  
+
   cd ../../MoVRs_OutputDir
-  
+
   for file in *.homer; do
     outdir=HOMER_${file/.homer/}
     logfile=HOMERlogfile_${file/.homer/}
@@ -738,7 +735,7 @@ if [ $runstep7 == 1 ] ; then
     sem -j $numproc "compareMotifs.pl $file $outdir >& $logfile; echo done with compareMotifs.pl for ${file} ...;"
   done
   sem --wait
-  
+
   echo "Annotation of the predicted motifs is completed. Check the html files for detail"
 fi
 
@@ -749,13 +746,13 @@ exit
 
 
 ##########################################################
-#Step 8					         #
+#Step 8							 #
 #Annotate position of novel motifs                       #
 ##########################################################
 #use HOMER annotatePeaks.pl to identify motif positions on the reference genome
 
 #for file in *.homer;
-#do 
+#do
 #	echo "Begin annotatePeaks.pl for motif $file ..."
 #	annotatePeaks.pl $position $genome -m $file > ${file/homer/out}
 #	echo ""
