@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 21, 2016.  Volker Brendel.
+# Last update: August 22, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -117,8 +117,17 @@ function usage() {
     "
   fi
 }
-
 if [ -z "$*" ] ; then usage short ; exit 1 ; fi
+
+
+function readconfigfile {
+# Read the specified ($1) MoVRs configuration file:
+
+findMotifsOptions=`grep '^findMotifsOptions=' "$1" | awk -F"=" '{print $2}'`
+findMotifsGenomeOptions=`grep '^findMotifsGenomeOptions=' "$1" | awk -F"=" '{print $2}'`
+tomtomOptions=`grep '^tomtomOptions=' "$1" | awk -F"=" '{print $2}'`
+}
+
 
 
 ##### Process command line arguments: #####
@@ -294,6 +303,7 @@ if [[ $debug == 'true' ]] ; then
   echo "configfile	=	$configfile"
 fi
 
+readconfigfile $configfile
 
 if [[ $peakorbedfile != '' ]] ; then
   if [[ $genomedir == ''  &&  $genomeID == '' ]] ; then
@@ -314,7 +324,7 @@ if [[ $peakorbedfile != '' ]] ; then
 # Remove [] characters, if any:
   sizestring=${sizestring#[};
   sizestring=${sizestring%]}
-  echo "  findMotifsGenome.pl $peakorbedfile $genome $outputdir -size $sizestring -len $lengthstring -S $nummotifs -p $numthreads"
+  echo "  findMotifsGenome.pl $peakorbedfile $genome $outputdir -size $sizestring -len $lengthstring -S $nummotifs -p $numthreads $findMotifsGenomeOptions"
   echo ""
   input=peakorbedfile
 
@@ -330,7 +340,7 @@ elif [[ $fastafile != '' ]] ; then
   fi
   echo ""
   echo "Going ahead with"
-  echo "  findMotifs.pl $fastafile fasta $outputdir -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads"
+  echo "  findMotifs.pl $fastafile fasta $outputdir -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads $findMotifsOptions"
   echo ""
   input=fastafile
 
@@ -347,7 +357,7 @@ elif [[ $geneIDfile != '' ]]; then
   end=${sizestring#*,}; end=${end%%]}
   echo ""
   echo "Going ahead with"
-  echo "  findMotifs.pl $geneIDfile $promoterset $outputdir -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads"
+  echo "  findMotifs.pl $geneIDfile $promoterset $outputdir -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads $findMotifsOptions"
   echo ""
   input=geneIDfile
 fi
@@ -544,18 +554,18 @@ if [ $runstep2 == 1 ] ; then
   for file in trainingSet[0-1][0-9] ; do
 
     if [[ $input == 'peakorbedfile' ]] ; then
-      echo "findMotifsGenome.pl $file $genome HOMER_${file} -len $lengthstring -size $sizestring -p $numthreads"
-      sem -j $numproc "findMotifsGenome.pl $file $genome HOMER_${file} -len $lengthstring -size $sizestring -p $numthreads >& HOMERlogfile_${file}; echo  done with findMotifsGenome.pl for ${file} ...;"
+      echo "findMotifsGenome.pl $file $genome HOMER_${file} -len $lengthstring -size $sizestring -p $numthreads $findMotifsGenomeOptions"
+      sem -j $numproc "findMotifsGenome.pl $file $genome HOMER_${file} -len $lengthstring -size $sizestring -p $numthreads $findMotifsGenomeOptions >& HOMERlogfile_${file}; echo  done with findMotifsGenome.pl for ${file} ...;"
     fi
 
     if [[ $input == 'fastafile' ]] ; then
-      echo "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads"
-      sem -j $numproc "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads >& HOMERlogfile_${file}; echo done with findMotifsGenome.pl for ${file} ...;"
+      echo "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads $findMotifsOptions"
+      sem -j $numproc "findMotifs.pl $file fasta HOMER_${file} -fasta $backgroundfile -len $lengthstring -S $nummotifs -p $numthreads $findMotifsOptions >& HOMERlogfile_${file}; echo done with findMotifs.pl for ${file} ...;"
     fi
 
     if [[ $input == 'geneIDfile' ]] ; then
-      echo "  findMotifs.pl $file $promoterset HOMER_${file} -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads"
-      sem -j $numproc "findMotifs.pl $file $promoterset HOMER_${file} -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads >& HOMERlogfile_${file}; echo  done with findMotifsGenome.pl for $file} ...;"
+      echo "  findMotifs.pl $file $promoterset HOMER_${file} -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads $findMotifsOptions"
+      sem -j $numproc "findMotifs.pl $file $promoterset HOMER_${file} -start $start -end $end -len $lengthstring -S $nummotifs -p $numthreads $findMotifsOptions >& HOMERlogfile_${file}; echo  done with findMotifs.pl for ${file} ...;"
     fi
 
   done
@@ -610,8 +620,8 @@ if [ $runstep3 == 1 ] ; then
 
   FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
   echo ""
-  echo "tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile"
-  tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile
+  echo "tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP $tomtomOptions >& TOMTOMlogfile"
+  tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP $tomtomOptions >& TOMTOMlogfile
   if [ "$?" -eq "1" ] ; then
     echo "Fatal error running tomtom.  Please check."
     exit 1
