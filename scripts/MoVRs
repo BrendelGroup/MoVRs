@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 22, 2016.  Volker Brendel.
+# Last update: August 24, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -125,7 +125,9 @@ function readconfigfile {
 
 findMotifsOptions=`grep '^findMotifsOptions=' "$1" | awk -F"=" '{print $2}'`
 findMotifsGenomeOptions=`grep '^findMotifsGenomeOptions=' "$1" | awk -F"=" '{print $2}'`
+homer2Options=`grep '^homer2Options=' "$1" | awk -F"=" '{print $2}'`
 tomtomOptions=`grep '^tomtomOptions=' "$1" | awk -F"=" '{print $2}'`
+annotatePeaksOptions=`grep '^annotatePeaksOptions=' "$1" | awk -F"=" '{print $2}'`
 }
 
 
@@ -351,6 +353,11 @@ elif [[ $geneIDfile != '' ]]; then
     echo "Promoter set \"$promoterset\" not found."
     echo "Please specify one of (human, mouse, rat, fly, worm, zebrafish, yeast) or construct your own"
     echo "promoter set following HOMER instructions and add its label to the $0 script as allowable choice."
+    exit
+  elif [[ $genomeID == '' ]] ; then
+    echo ""
+    echo "Please specifify a valid genomeID with option -G."
+    usage short
     exit
   fi
   start=${sizestring%,*}; start=${start##[};
@@ -743,8 +750,12 @@ if [ $runstep6 == 1 ] ; then
   echo "MoVRs: Now running step 6 (MoVRs motif presentation and annotation) ..."
   echo ""
   cd ${workingdir}
+
   if [ ! -d "${outputdir}/MoVRs_OutputDir" ] ; then
     mkdir ${outputdir}/MoVRs_OutputDir
+  fi
+  if [ ! -d "${outputdir}/MoVRs_OutputDir/SeqLogoDir" ] ; then
+    mkdir ${outputdir}/MoVRs_OutputDir/SeqLogoDir
   fi
 
   cd ${outputdir}/tmpMotifDir/MCLUSTERresults
@@ -762,7 +773,13 @@ if [ $runstep6 == 1 ] ; then
   done
 
   cd ../../MoVRs_OutputDir
-
+  \mv mcluster*cmotif*.png SeqLogoDir/
+  if [ ! -d "HomerDir" ] ; then
+    mkdir HomerDir
+  fi
+  if [ ! -d "LogfileDir" ] ; then
+    mkdir LogfileDir
+  fi
   for file in *.homer; do
     outdir=HOMER_${file/.homer/}
     logfile=HOMERlogfile_${file/.homer/}
@@ -770,6 +787,9 @@ if [ $runstep6 == 1 ] ; then
     sem -j $numproc "compareMotifs.pl $file $outdir >& $logfile; echo done with compareMotifs.pl for ${file} ...;"
   done
   sem --wait
+
+  \mv HOMER_* HomerDir/
+  \mv HOMERlogfile* LogfileDir/
 
   echo ""
   echo "MoVRs: Done with step 6 (MoVRs motif presentation and annotation)."
@@ -788,26 +808,33 @@ if [ $runstep7 == 1 ] ; then
   echo "MoVRs: Now running step 7 ..."
   echo ""
   cd ${workingdir}
-  echo "yet to be written = locate motifs"
+
+  cd ${outputdir}/MoVRs_OutputDir
+  for file in mcluster*.homer ; do
+    outfile=${file/.homer/.tab}
+    logfile=ANNOTATIONlogfile_${file/.homer/}
+
+    if [[ $input == 'peakorbedfile' ]] ; then
+      echo "annotatePeaks.pl ${workingdir}/$peakorbedfile $genome -m $file $annotatePeaksOptions 2> $logfile 1> $outfile"
+      sem -j $numproc "annotatePeaks.pl ${workingdir}/$peakorbedfile $genome -m $file $annotatePeaksOptions 2> $logfile 1> $outfile; echo done with annotatePeaks.pl for ${file} ...;"
+    fi
+
+    if [[ $input == 'fastafile' ]] ; then
+      echo "homer2 find -i $fastafile -m $file -p $numthreads $homer2Options 2> $logfile 1> $outfile"
+      sem -j $numproc "homer2 find -i $fastafile -m $file -p $numthreads $homer2Options 2> $logfile 1> $outfile; echo done with homer2 for ${file} ...;"
+    fi
+
+    if [[ $input == 'geneIDfile' ]] ; then
+      echo "annotatePeaks.pl ${workingdir}/$geneIDfile $genomeID -m $file $annotatePeaksOptions 2> $logfile 1> $outfile"
+      sem -j $numproc "annotatePeaks.pl ${workingdir}/$geneIDfile $genomeID -m $file $annotatePeaksOptions 2> $logfile 1> $outfile; echo done with annotatePeaks.pl for ${file} ...;"
+    fi
+
+  done
+  sem --wait
+
+  \mv ANNOTATIONlogfile* LogfileDir/
+  cd ..
   echo ""
   echo "================================================================================"
 fi
 exit
-
-
-##########################################################
-#Step 8							 #
-#Annotate position of novel motifs                       #
-##########################################################
-#use HOMER annotatePeaks.pl to identify motif positions on the reference genome
-
-#for file in *.homer;
-#do
-#	echo "Begin annotatePeaks.pl for motif $file ..."
-#	annotatePeaks.pl $position $genome -m $file > ${file/homer/out}
-#	echo ""
-#done
-
-#echo ".out files are results of annotatePeaks for each motif cluster" >> README.txt
-
-#echo "Finally, out job is completed. Check README.txt for information about output files"
