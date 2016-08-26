@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 25, 2016.  Volker Brendel.
+# Last update: August 26, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -57,7 +57,7 @@ function usage() {
       $0 -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10 --minpresence 7 --startfromstep step5 >& errTEST1AGAIN
       $0 -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
       $0 -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
-      $0 -i testidfile -r human --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
+      $0 -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
 
     MoVRs will determine candidate motifs in a several-steps workflow.  You can specify
     partial workflow execution by specifying \"stepX\" [X = 1, 2, ..., 7] as argument to 
@@ -79,7 +79,7 @@ function usage() {
       You must specify input in one of three forms:
         1a) -a/-g or -a/-G combination    (peak or BED file and genome file or identifier)
         1b) -f/-b combination             (FASTA target and background files)
-        1c) -i/-r combination             (GeneID file and preprocessed promoter set)
+        1c) -i/-r/-G combination          (GeneID file and preprocessed promoter set as well as genome identifier)
 
       Other options default to the specified values if not set.
       Details:
