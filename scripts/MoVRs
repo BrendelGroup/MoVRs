@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 24, 2016.  Volker Brendel.
+# Last update: August 25, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -639,8 +639,8 @@ if [ $runstep3 == 1 ] ; then
 
   FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
   echo ""
-  echo "tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP $tomtomOptions >& TOMTOMlogfile"
-  tomtom -thresh $ttthreshold -evalue $FilteredMotifsFileFP $FilteredMotifsFileFP $tomtomOptions >& TOMTOMlogfile
+  echo "tomtom -thresh $ttthreshold -evalue $tomtomOptions $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile"
+  tomtom -thresh $ttthreshold -evalue $tomtomOptions $FilteredMotifsFileFP $FilteredMotifsFileFP >& TOMTOMlogfile
   if [ "$?" -eq "1" ] ; then
     echo "Fatal error running tomtom.  Please check."
     exit 1
