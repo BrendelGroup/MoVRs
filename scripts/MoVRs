@@ -323,7 +323,13 @@ if [[ $peakorbedfile != '' ]] ; then
   else
     genome=$genomeID
   fi
-# Remove [] characters, if any:
+# Check for presence of [] characters:
+  if [[ "$sizestring" != [1-9][0-9]* ]] && [[ "$sizestring" != "["*"]" ]] && [[ "$sizestring" != "given" ]] ; then
+    echo "Please provide a HOMER size string when using -a and -s as <#>, <[#,#]>, or \"given\""
+     usage short
+     exit 1
+  fi
+# Remove [] characters:
   sizestring=${sizestring#[};
   sizestring=${sizestring%]}
   echo "  findMotifsGenome.pl $peakorbedfile $genome $outputdir -size $sizestring -len $lengthstring -S $nummotifs -p $numthreads $findMotifsGenomeOptions"
@@ -359,6 +365,12 @@ elif [[ $geneIDfile != '' ]]; then
     echo "Please specifify a valid genomeID with option -G."
     usage short
     exit
+  fi
+# Check for presence of [] characters:
+  if [[ "$sizestring" != "["*"]" ]] ; then
+    echo "Please provide a HOMER size string when using -i and -s as <[#,#]>"
+     usage short
+     exit 1
   fi
   start=${sizestring%,*}; start=${start##[};
   end=${sizestring#*,}; end=${end%%]}
