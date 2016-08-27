@@ -131,38 +131,45 @@ considered a validated candidate motif.  The first four steps of the workflow ar
 rerun.
 
 ```
-      ./MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
+MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
 ```
 runs data corresponding to the preloaded human genome hg19.  The -k argument specifies
 5-fold cross-validation.
 
 ```
-      ./MoVRs -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
+MoVRs -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
 ```
 takes the specified FASTA-formatted __roi__ and background sequences and restrictsyy
 HOMER](http://homer.salk.edu/homer/) to report only the best 10 motifs in each run.
 
 ```
-      ./MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
+MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
 ```
 looks for motifs in the -200 to 100 range in the promoters of the human genes specified in
 the testidfile file.
 
 
 ## Steps in the workflow
+A great way of learning what the __MoVRs__ workflow entails is to run an example in
+stepwise fashion.  Just add the option __--runonlystep step1__ to your favorite
+example.  That will stop the workflow after the first step (summarized below).
+Look at the program logfiles and output, follow up on the program documentation,
+and take a mental snapshot of what this step accomplished.  Then replace
+__--runonlystep step1__ by __--runonlystep step2__ and continue in similar fashion
+until the final step.
 
 ##### Step 1: Setting up training and validation sets
 This step will create the training and validation sets in the specified
 output directory, subdirectories _tmpTrainingDir_ and _tmpValidationDir_.
 
-##### Step 2: HOMER](http://homer.salk.edu/homer/) de novo motif finding in training sets
-This step will run the appropriate HOMER](http://homer.salk.edu/homer/) motif
+##### Step 2: [HOMER](http://homer.salk.edu/homer/) de novo motif finding in training sets
+This step will run the appropriate [HOMER](http://homer.salk.edu/homer/) motif
 finder on each of the training sets.  Records of this step are in _tmpTraingDir_, and
 final 9utput is deposited in the output subdirectory _tmpMotifDir_.
 
 ##### Step 3:  Motif extraction, filtering, and comparison
 Run in the _tmpMotifDir_, this step processes the motifs produced by the
-HOMER](http://homer.salk.edu/homer/) run.  Motifs exceeding a quality threshold
+[HOMER](http://homer.salk.edu/homer/) run.  Motifs exceeding a quality threshold
 specified by option -m are pairwise compared using the MEME suite _tomtom_ tool,
 and labeled similar if exceeding the threshold specified by option -t.
 Results are deposited into output subdirectory _tmpMotifDir/TOMTOMresults_.
