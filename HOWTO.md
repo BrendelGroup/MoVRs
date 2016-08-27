@@ -150,6 +150,13 @@ the testidfile file.
 
 
 ## Steps in the workflow
+A great way of learning what the __MoVRs__ workflow entails is to run an example in
+stepwise fashion.  Just add the option __--runonlystep step1__ to your favorite
+example.  That will stop the workflow after the first step (summarized below).
+Look at the program logfiles and output, follow up on the program documentation,
+and take a mental snapshot of what this step accomplished.  Then replace
+__--runonlystep step1__ by __--runonlystep step2__ and continue in similar fashion
+until the final step.
 
 ##### Step 1: Setting up training and validation sets
 This step will create the training and validation sets in the specified
