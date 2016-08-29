@@ -165,7 +165,10 @@ output directory, subdirectories _tmpTrainingDir_ and _tmpValidationDir_.
 ##### Step 2: [HOMER](http://homer.salk.edu/homer/) de novo motif finding in training sets
 This step will run the appropriate [HOMER](http://homer.salk.edu/homer/) motif
 finder on each of the training sets.  Records of this step are in _tmpTraingDir_, and
-final 9utput is deposited in the output subdirectory _tmpMotifDir_.
+final 9utput is deposited in the output subdirectory _tmpMotifDir_. Please note that, By default, findMotifsGenome.pl
+is run with the -norevopp option, which we find aids the subsequence motif comparison and clustering
+steps. Also, findMotifsGenome.pl runs with the motif length (-len) option set to '8,10,12' [base-pairs].
+These can be changed by modifying the scripts/MoVRs.conf file.
 
 ##### Step 3:  Motif extraction, filtering, and comparison
 Run in the _tmpMotifDir_, this step processes the motifs produced by the
