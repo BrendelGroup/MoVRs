@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 26, 2016.  Volker Brendel.
+# Last update: August 30, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -39,7 +39,8 @@ lengthstring="8,10,12"
 nummotifs=25
 kfold=10
 numproc=1
-mmquality=1e-3
+mmquality=1e-10
+keepnmotifs="all"
 ttthreshold=1e-3
 minpresence="default"
 outputdir=./
@@ -104,6 +105,7 @@ function usage() {
         -k <#>                            Conduct <#>-fold crossv-validation [Default: 10]
         -p|--numproc <#>                  Use <#> processors during execution [Default: 1]; ideally a multipe of the -k argument.
         -m|--mmquality <1e-#>             Minimum motif quality for motif to be considered [Default: 1e-3]
+        -n|--keepnmotifs <#>              Maximum number of motifs above mmquality to keep [Default: all]
         -t|--ttthreshold <1e-#>           Threshold for tomtom motif similarity [Default: 1e-3]
         --minpresence <#>                 Minimal number of training sets in which a MoVRs motif must occur [Default: -k argument minus 1]
         -o|--outputdir <path>             Put output into directory <path> [Default: ./]
@@ -135,7 +137,7 @@ annotatePeaksOptions=`grep '^annotatePeaksOptions=' "$1" | awk -F"=" '{print $2}
 ##### Process command line arguments: #####
 #
 
-OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
+OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:n:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,keepnmotifs:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
 if [ $? != 0 ] ; then echo " " ; echo "Could not parse options (see above) ..." >&2 ; usage short ; exit 1 ; fi
 
 eval set -- "$OPTIONS"
@@ -227,6 +229,12 @@ while true ; do
          *) mmquality=$2 ; shift 2 ;;
       esac ;;
 
+    -n|--keepnmotifs)
+      case "$2" in
+        -*) echo "Please provide the number of motifs to keep when using -n"; usage short; exit 1 ;;
+         *) keepnmotifs=$2 ; shift 2 ;;
+      esac ;;
+
     -t|--ttthreshold)
       case "$2" in
         -*) echo "Please provide a value for the tomtom similarity threshold when using -t"; usage short; exit 1 ;;
@@ -296,6 +304,7 @@ if [[ $debug == 'true' ]] ; then
   echo "numproc		=	$numproc"
   echo "numthreads	=	$numthreads"
   echo "mmquality	=	$mmquality"
+  echo "keepnmotifs	=	$keepnmotifs"
   echo "ttthreshold	=	$ttthreshold"
   echo "minpresence	=	$minpresence"
   echo "outputdir	=	$outputdir"
@@ -619,11 +628,30 @@ if [ $runstep3 == 1 ] ; then
 
   cd ${outputdir}/tmpMotifDir
   for file in *motifs.homer ; do
-    echo "Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}"
-    Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}
-  done	# convert HOMER motifs to meme format
+    outfmeme=${file/homer/meme}
+    echo "Rscript ${installdir}/MoVRs_Motif2meme.R $file $outfmeme"
+    Rscript ${installdir}/MoVRs_Motif2meme.R $file $outfmeme
+    if [ $keepnmotifs != "all" ] ; then
+      outfkept=${outfmeme/motifs/motifsKept}
+      echo ""
+      echo "python ${installdir}/MoVRs_ExtractMotif.py -i $outfmeme -k $keepnmotifs -o $outfkept"
+      python ${installdir}/MoVRs_ExtractMotif.py -i $outfmeme -k $keepnmotifs -o $outfkept
+      if [ "$?" -eq "1" ] ; then
+        echo "Fatal error running MoVRs_ExtractMotif.py.  Please check."
+        exit 1
+      else
+        echo "... done"
+      fi
+      echo ""
+    fi
+  done	# convert HOMER motifs to meme format and (optionally) keep top n motifs only
+  
   AllMotifsFile="AllMotifs.meme"
-  cat trainingSet*.meme > ${AllMotifsFile}
+  if [ $keepnmotifs != "all" ] ; then
+    cat trainingSet*motifsKept.meme > ${AllMotifsFile}
+  else
+    cat trainingSet*motifs.meme > ${AllMotifsFile}
+  fi
 
   FilteredMotifsFile="FilteredMotifs.meme"
   echo ""

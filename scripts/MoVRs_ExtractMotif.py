@@ -1,6 +1,8 @@
-#this script reads file containing list of motif names and print put several files each containg motifs for one group in MEME format.
 #!/usr/bin/env python
 import argparse,math,re
+
+#THESE NOTES NEED CLEANING UP
+#this script reads file containing list of motif names and print put several files each containg motifs for one group in MEME format.
 #ParseMEME parse the combined motif file into a dictionary, key is the name of motif, and value is a string containg all the content for this motif.
 
 
@@ -40,6 +42,7 @@ if __name__ == "__main__":
 	parser.add_argument('-i','--motif_MEME',required=True)
 	parser.add_argument('-n','--motif_name')
 	parser.add_argument('-t','--motif_threshold')
+	parser.add_argument('-k','--keepnmotifs')
 	parser.add_argument('-o','--out_file',required=True)
 	args = parser.parse_args()
 
@@ -54,6 +57,16 @@ if __name__ == "__main__":
 			if not check_threshold(content,threshold):
 				del motif_list[key]
 
+
+	#extract top n motifs
+        #THIS IS A PLACEHOLDER FOR NOW - WE WANT THE TOP n MOTIFS BY E-VALUE!
+	if args.keepnmotifs:
+		keepn = float(args.keepnmotifs)
+		i = 0
+		for key in list(motif_list):
+                    i += 1
+		    if i > keepn:
+			del motif_list[key]
 
 	if args.motif_name:#extract motifs according to motif names in motif_name file
 		with open(args.motif_name,'r') as fileName:
