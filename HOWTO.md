@@ -131,19 +131,19 @@ considered a validated candidate motif.  The first four steps of the workflow ar
 rerun.
 
 ```
-      ./MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
+MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
 ```
 runs data corresponding to the preloaded human genome hg19.  The -k argument specifies
 5-fold cross-validation.
 
 ```
-      ./MoVRs -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
+MoVRs -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
 ```
 takes the specified FASTA-formatted __roi__ and background sequences and restrictsyy
 HOMER](http://homer.salk.edu/homer/) to report only the best 10 motifs in each run.
 
 ```
-      ./MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
+MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 -p 8 --outputdir TEST4 >& errTEST4
 ```
 looks for motifs in the -200 to 100 range in the promoters of the human genes specified in
 the testidfile file.
