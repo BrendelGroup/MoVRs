@@ -63,7 +63,7 @@ def extract_by_evalue(motif_list,evalue,k):
 		for j in range(i):
 			out_list.append(sorted_pair[j][0])
 	else:
-		for j in range(k):
+		for j in range(int(k)):
 			out_list.append(sorted_pair[j][0])
 	return out_list
 
