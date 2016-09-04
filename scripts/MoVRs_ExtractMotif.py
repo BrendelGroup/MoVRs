@@ -36,8 +36,10 @@ def check_threshold(motif,threshold):
 		return True
 
 def extract_by_evalue(motif_list,evalue,k):
-	'''Take a dictionary of motif, e.g motif_list,evalue which default 
-	is 1e-10 and the maximum number k, then output corresponding motif'''
+	'''Take a dictionary of motif, e.g motif_list, evalue which default 
+	is 1e-6 and the maximum number k which default is 25 as input, then
+	output the corresponding motifs'''
+	
 	tmp_list={}
 	out_list=[]
 	for key in motif_list.keys():
@@ -50,17 +52,18 @@ def extract_by_evalue(motif_list,evalue,k):
 	sorted_pair=sorted(tmp_list.items(),key=lambda x: x[1])#sort the list by	the E_value from smallest to largest
 	i=0
 	while i<len(sorted_pair):
+                E_value = sorted_pair[i][1]
 		if E_value ==0:
 			i+=1
 		if math.log(E_value/evalue)<=0:
 			i+=1
 		else:
 			break
-	if k>i+1:
+	if k>i:
 		for j in range(i):
 			out_list.append(sorted_pair[j][0])
 	else:
-		for j in range(k):
+		for j in range(int(k)):
 			out_list.append(sorted_pair[j][0])
 	return out_list
 
@@ -71,21 +74,12 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-i','--motif_MEME',required=True)
 	parser.add_argument('-n','--motif_name')
-	parser.add_argument('-t','--motif_threshold')
+	parser.add_argument('-t','--motif_threshold',default="1e-6")
 	parser.add_argument('-o','--out_file',required=True)
-	parser.add_argument('-k','--motif_number',default=25)
+	parser.add_argument('-N','--motif_number',default=25)
 	args = parser.parse_args()
 
-	motif_list = ParseMEME(args.motif_MEME)
-	
-	#extract motifs according to threshold
-	if args.motif_threshold:
-		threshold = float(args.motif_threshold)
-		for key in list(motif_list):
-			content = motif_list[key]
-			if not check_threshold(content,threshold):
-				del motif_list[key]
-
+	motif_list = ParseMEME(args.motif_MEME)	
 
 	if args.motif_name:#extract motifs according to motif names in motif_name file
 		with open(args.motif_name,'r') as fileName:
@@ -103,9 +97,19 @@ if __name__ == "__main__":
 				content = motif_list[each]
 				ofile.write(content)
 	else:
-		with open(args.out_file,'w') as ofile:
-			ofile.write('MEME version 4\n'+"ALPHABET= ACGT\n\n")
-			mykeys = sorted_nicely(motif_list.keys())
-			for each in mykeys:# the motif name in each group
- 				content = motif_list[each]
- 				ofile.write(content)
+            #extract motifs according to threshold
+	    evalue = float(args.motif_threshold)
+	    k = float(args.motif_number)
+            
+	    extract_motif_name = extract_by_evalue(motif_list,evalue,k)
+	    output_motif_list = {}
+
+            for each in extract_motif_name:
+                    output_motif_list[each] = motif_list[each]
+        
+            with open(args.out_file,'w') as ofile:
+                ofile.write('MEME version 4\n'+"ALPHABET= ACGT\n\n")
+                mykeys = sorted_nicely(output_motif_list.keys())
+                for each in mykeys:# the motif name in each group
+                    content = output_motif_list[each]
+                    ofile.write(content)

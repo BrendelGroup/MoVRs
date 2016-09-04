@@ -37,6 +37,7 @@ promoterset="unknown"
 sizestring=200
 lengthstring="8,10,12"
 nummotifs=25
+topmotifs=25
 kfold=10
 numproc=1
 mmquality=1e-3
@@ -101,6 +102,7 @@ function usage() {
         -l|--length <string>              HOMER motif length argument (<#> or <#>,<#>,...) [Default: 8,10,12]
         -S|--nummotifs <#>                HOMER argument for the number of motifs of each length to find) [Default: 25]
       3) MoVRs-specific options:
+	-N|--topmotifs <#>		  Number of extracted motifs from HOMER output [Default: 25]
         -k <#>                            Conduct <#>-fold crossv-validation [Default: 10]
         -p|--numproc <#>                  Use <#> processors during execution [Default: 1]; ideally a multipe of the -k argument.
         -m|--mmquality <1e-#>             Minimum motif quality for motif to be considered [Default: 1e-3]
@@ -135,7 +137,7 @@ annotatePeaksOptions=`grep '^annotatePeaksOptions=' "$1" | awk -F"=" '{print $2}
 ##### Process command line arguments: #####
 #
 
-OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
+OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:N:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,topmotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
 if [ $? != 0 ] ; then echo " " ; echo "Could not parse options (see above) ..." >&2 ; usage short ; exit 1 ; fi
 
 eval set -- "$OPTIONS"
@@ -207,6 +209,12 @@ while true ; do
       case "$2" in
         -*) echo "Please provide the number of motifs to find when using -S"; usage short; exit 1 ;;
          *) nummotifs=$2 ; shift 2 ;;
+      esac ;;
+
+    -N|--topmotifs)
+      case "$2" in
+	-*) echo "Please provide the number of MEME motifs with lowest e-value to be extracted when useing -N"; usage short; exit 1;;
+	 *) topmotifs=$2 ; shift 2 ;;
       esac ;;
 
     -k|--kfold)
@@ -292,6 +300,7 @@ if [[ $debug == 'true' ]] ; then
   echo "sizestring	=	$sizestring"
   echo "lengthstring	=	$lengthstring"
   echo "nummotifs	=	$nummotifs"
+  echo "topmotifs       =       $topmotifs"
   echo "kfold		=	$kfold"
   echo "numproc		=	$numproc"
   echo "numthreads	=	$numthreads"
@@ -306,6 +315,10 @@ if [[ $debug == 'true' ]] ; then
 fi
 
 readconfigfile $configfile
+
+if [[ $topmotifs > $nummotifs ]] ; then
+	echo "-N argument should not exceed the -S argument but we will continue "
+fi
 
 if [[ $peakorbedfile != '' ]] ; then
   if [[ $genomedir == ''  &&  $genomeID == '' ]] ; then
@@ -622,13 +635,24 @@ if [ $runstep3 == 1 ] ; then
     echo "Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}"
     Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}
   done	# convert HOMER motifs to meme format
-  AllMotifsFile="AllMotifs.meme"
-  cat trainingSet*.meme > ${AllMotifsFile}
+
+  #extracted best N motifs ranked by -t argument for each trainingSet
+  for file in trainingSet*.meme; do
+    tmpExtractedfile=${file/meme/tmp}
+    echo ""
+    echo "python ${installdir}/MoVRs_ExtractMotif.py -i $file -N $topmotifs -t $mmquality -o ${tmpExtractedFile}"	
+    python ${installdir}/MoVRs_ExtractMotif.py -i $file -N $topmotifs -t $mmquality -o ${tmpExtractedFile}
+    echo "$(tail -n +5 ${tmpExtractedFile})" > ${tmpExtractedFile}  	
+  done
 
   FilteredMotifsFile="FilteredMotifs.meme"
-  echo ""
-  echo "python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}"
-  python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}
+  cat trainingSet*.tmp > ${FilteredMotifsFile}
+  sed -i '1s/^/"MEME version 4\nALPHABET= ACGT\n\n"/' ${FilteredMotifsFile}
+  
+#  FilteredMotifsFile="FilteredMotifs.meme"
+#  echo ""
+#  echo "python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}"
+#  python ${installdir}/MoVRs_ExtractMotif.py -i ${AllMotifsFile} -t $mmquality -o ${FilteredMotifsFile}
   if [ "$?" -eq "1" ] ; then
     echo "Fatal error running MoVRs_ExtractMotif.py.  Please check."
     exit 1
