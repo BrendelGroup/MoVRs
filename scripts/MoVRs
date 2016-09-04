@@ -647,7 +647,7 @@ if [ $runstep3 == 1 ] ; then
 
   FilteredMotifsFile="FilteredMotifs.meme"
   cat trainingSet*.tmp > ${FilteredMotifsFile}
-  sed -i '1s/^/'MEME version 4\n'+"ALPHABET= ACGT\n\n"/' ${FilteredMotifsFile}
+  sed -i '1s/^/"MEME version 4\nALPHABET= ACGT\n\n"/' ${FilteredMotifsFile}
   
 #  FilteredMotifsFile="FilteredMotifs.meme"
 #  echo ""
