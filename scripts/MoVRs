@@ -5,7 +5,7 @@
 # Last update: August 26, 2016.  Volker Brendel.
 #
 
-debug=true	# set to true for code development
+debug=false	# set to true for code development
 shopt -s extglob
 
 
