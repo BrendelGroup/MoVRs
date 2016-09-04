@@ -137,7 +137,7 @@ annotatePeaksOptions=`grep '^annotatePeaksOptions=' "$1" | awk -F"=" '{print $2}
 ##### Process command line arguments: #####
 #
 
-OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
+OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:N:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,topmotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
 if [ $? != 0 ] ; then echo " " ; echo "Could not parse options (see above) ..." >&2 ; usage short ; exit 1 ; fi
 
 eval set -- "$OPTIONS"
