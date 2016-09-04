@@ -76,7 +76,7 @@ if __name__ == "__main__":
 	parser.add_argument('-n','--motif_name')
 	parser.add_argument('-t','--motif_threshold',default="1e-6")
 	parser.add_argument('-o','--out_file',required=True)
-	parser.add_argument('-k','--motif_number',default=25)
+	parser.add_argument('-N','--motif_number',default=25)
 	args = parser.parse_args()
 
 	motif_list = ParseMEME(args.motif_MEME)	
