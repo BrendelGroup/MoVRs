@@ -1,7 +1,7 @@
 #! /usr/bin/perl -w
 #
 # MotifSetReduce.pl
-# Version of February 10, 2016.  Volker Brendel
+# Version of September 5, 2016.  Volker Brendel
 
 use strict;
 use Getopt::Std;
@@ -14,7 +14,7 @@ my $L2THRESHOLD = 0.75;
 
 
 
-my $USAGE="\nUsage: $0 -m motiffile [-v] [-l mmlength][-t mmthreshold] [-r icthreshold]\n
+my $USAGE="\nUsage: $0 -m motiffile [-v] [-l mmlength] [-t mmthreshold] [-c icthreshold]\n
 
 
 ** This script reads input from a DNA motif file (required option -m) which is meant to
@@ -28,7 +28,7 @@ my $USAGE="\nUsage: $0 -m motiffile [-v] [-l mmlength][-t mmthreshold] [-r icthr
    mmthreshold refers to the maximum distance for motifs to be candidates for merging.
 
    icthreshold refers to the minimal information content for motif end positions to be retained
-    (use -r 2.0 to disable trimming of motifs).
+    (use -c 2.0 to disable trimming of motifs).
 
    -v generates verbose output (for debugging, set the variable $debug to 1 in the code).
  
