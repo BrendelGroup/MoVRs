@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: August 26, 2016.  Volker Brendel.
+# Last update: September 5, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -39,7 +39,8 @@ lengthstring="8,10,12"
 nummotifs=25
 kfold=10
 numproc=1
-mmquality=1e-3
+mmquality=1e-10
+keepnmotifs="all"
 ttthreshold=1e-3
 minpresence="default"
 outputdir=./
@@ -104,6 +105,7 @@ function usage() {
         -k <#>                            Conduct <#>-fold crossv-validation [Default: 10]
         -p|--numproc <#>                  Use <#> processors during execution [Default: 1]; ideally a multipe of the -k argument.
         -m|--mmquality <1e-#>             Minimum motif quality for motif to be considered [Default: 1e-3]
+        -n|--keepnmotifs <#>              Maximum number of motifs above mmquality to keep for each training set [Default: all]
         -t|--ttthreshold <1e-#>           Threshold for tomtom motif similarity [Default: 1e-3]
         --minpresence <#>                 Minimal number of training sets in which a MoVRs motif must occur [Default: -k argument minus 1]
         -o|--outputdir <path>             Put output into directory <path> [Default: ./]
@@ -125,9 +127,10 @@ function readconfigfile {
 
 findMotifsOptions=`grep '^findMotifsOptions=' "$1" | awk -F"=" '{print $2}'`
 findMotifsGenomeOptions=`grep '^findMotifsGenomeOptions=' "$1" | awk -F"=" '{print $2}'`
-homer2Options=`grep '^homer2Options=' "$1" | awk -F"=" '{print $2}'`
-tomtomOptions=`grep '^tomtomOptions=' "$1" | awk -F"=" '{print $2}'`
 annotatePeaksOptions=`grep '^annotatePeaksOptions=' "$1" | awk -F"=" '{print $2}'`
+homer2Options=`grep '^homer2Options=' "$1" | awk -F"=" '{print $2}'`
+MotifSetReduceOptions=`grep '^MotifSetReduceOptions=' "$1" | awk -F"=" '{print $2}'`
+tomtomOptions=`grep '^tomtomOptions=' "$1" | awk -F"=" '{print $2}'`
 }
 
 
@@ -135,7 +138,7 @@ annotatePeaksOptions=`grep '^annotatePeaksOptions=' "$1" | awk -F"=" '{print $2}
 ##### Process command line arguments: #####
 #
 
-OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
+OPTIONS=`getopt -o a:b:g:G:f:i:r:s:l:S:k:p:m:n:t:o:c:h --long annotation:,background:,genome:,Genome:,fasta:,geneID:,promoter:,size:,length:,nummotifs:,kfold:,numproc:,mmquality:,keepnmotifs:,ttthreshold:,minpresence:,outputdir:,configfile:,startfromstep:,stopatstep:,runonlystep:,help -n 'MoVRs error' -- "$@"`
 if [ $? != 0 ] ; then echo " " ; echo "Could not parse options (see above) ..." >&2 ; usage short ; exit 1 ; fi
 
 eval set -- "$OPTIONS"
@@ -227,6 +230,12 @@ while true ; do
          *) mmquality=$2 ; shift 2 ;;
       esac ;;
 
+    -n|--keepnmotifs)
+      case "$2" in
+        -*) echo "Please provide the number of motifs to keep when using -n"; usage short; exit 1 ;;
+         *) keepnmotifs=$2 ; shift 2 ;;
+      esac ;;
+
     -t|--ttthreshold)
       case "$2" in
         -*) echo "Please provide a value for the tomtom similarity threshold when using -t"; usage short; exit 1 ;;
@@ -296,6 +305,7 @@ if [[ $debug == 'true' ]] ; then
   echo "numproc		=	$numproc"
   echo "numthreads	=	$numthreads"
   echo "mmquality	=	$mmquality"
+  echo "keepnmotifs	=	$keepnmotifs"
   echo "ttthreshold	=	$ttthreshold"
   echo "minpresence	=	$minpresence"
   echo "outputdir	=	$outputdir"
@@ -484,6 +494,23 @@ if [ $runstep1 == 1 ] ; then
   cd ${workingdir}
   echo "You have chosen $kfold-fold cross-validation"
 
+  if [ -d "${outputdir}/tmpTrainingDir" ] ; then
+    if [ ! -d "${outputdir}/Step1ResultsBACKUP" ] ; then
+      mkdir ${outputdir}/Step1ResultsBACKUP
+      mv ${outputdir}/tmpTrainingDir ${outputdir}/tmpValidationDir ${outputdir}/Step1ResultsBACKUP
+      echo ""
+      echo "NOTE: Previous results in ${outputdir}/tmpTrainingDir and ${outputdir}/tmpValidationDir"
+      echo "      are being saved in ${outputdir}/Step1ResultsBACKUP."
+      echo ""
+    else
+      echo "There are already previous MoVRs step 1 results in ${outputdir}/Step1ResultsBACKUP."
+      echo "Please discard or save elsewhere, as this rerun will save the present tmpTrainingDir and"
+      echo "tmpValidationDir directories in ${outputdir}/Step1ResultsBACKUP before re-running step 1"
+      echo "with current parameters."
+      exit
+    fi
+  fi
+
   if [ ! -d "${outputdir}/tmpValidationDir" ] ; then
     mkdir ${outputdir}/tmpValidationDir
   fi
@@ -570,6 +597,22 @@ if [ $runstep2 == 1 ] ; then
   cd ${workingdir}
 
   cd ${outputdir}/tmpTrainingDir
+  if [ -d "HOMER_trainingSet00" ] ; then
+    if [ ! -d "Step2ResultsBACKUP" ] ; then
+      mkdir Step2ResultsBACKUP
+      mv HOMER* Step2ResultsBACKUP
+      echo ""
+      echo "NOTE: Previous HOMER results are being saved in Step2ResultsBACKUP."
+      echo ""
+    else
+      echo "There are already previous MoVRs step 2 results in Step2ResultsBACKUP."
+      echo "Please discard or save elsewhere, as this rerun will save the present"
+      echo "HOMER results as Step2ResultsBACKUP before re-running step 2 with"
+      echo "current parameters."
+      exit
+    fi
+  fi
+  
   for file in trainingSet[0-1][0-9] ; do
 
     if [[ $input == 'peakorbedfile' ]] ; then
@@ -618,12 +661,49 @@ if [ $runstep3 == 1 ] ; then
   cd ${workingdir}
 
   cd ${outputdir}/tmpMotifDir
+  if [ ! -d "TOMTOMresults" ] ; then
+    mkdir TOMTOMresults
+  else
+    if [ ! -d "Step3ResultsBACKUP" ] ; then
+      mv TOMTOMresults Step3ResultsBACKUP
+      mv TOMTOMlogfile *.meme Step3ResultsBACKUP
+      mkdir TOMTOMresults
+      echo ""
+      echo "NOTE: Previous results in TOMTOMresults are being saved in Step3ResultsBACKUP."
+      echo ""
+    else
+      echo "There are already previous MoVRs step 3 results in Step3ResultsBACKUP."
+      echo "Please discard or save elsewhere, as this rerun will save the present"
+      echo "TOMTOMresults directory as Step3ResultsBACKUP before re-running step 3"
+      echo "with current parameters."
+      exit
+    fi
+  fi
   for file in *motifs.homer ; do
-    echo "Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}"
-    Rscript ${installdir}/MoVRs_Motif2meme.R $file ${file/homer/meme}
-  done	# convert HOMER motifs to meme format
+    outfmeme=${file/homer/meme}
+    echo "Rscript ${installdir}/MoVRs_Motif2meme.R $file $outfmeme"
+    Rscript ${installdir}/MoVRs_Motif2meme.R $file $outfmeme
+    if [ $keepnmotifs != "all" ] ; then
+      outfkept=${outfmeme/motifs/motifsKept}
+      echo ""
+      echo "python ${installdir}/MoVRs_ExtractMotif.py -i $outfmeme -k $keepnmotifs -o $outfkept"
+      python ${installdir}/MoVRs_ExtractMotif.py -i $outfmeme -k $keepnmotifs -o $outfkept
+      if [ "$?" -eq "1" ] ; then
+        echo "Fatal error running MoVRs_ExtractMotif.py.  Please check."
+        exit 1
+      else
+        echo "... done"
+      fi
+      echo ""
+    fi
+  done	# convert HOMER motifs to meme format and (optionally) keep top n motifs only
+  
   AllMotifsFile="AllMotifs.meme"
-  cat trainingSet*.meme > ${AllMotifsFile}
+  if [ $keepnmotifs != "all" ] ; then
+    cat trainingSet*motifsKept.meme > ${AllMotifsFile}
+  else
+    cat trainingSet*motifs.meme > ${AllMotifsFile}
+  fi
 
   FilteredMotifsFile="FilteredMotifs.meme"
   echo ""
@@ -676,6 +756,20 @@ if [ $runstep4 == 1 ] ; then
   cd ${outputdir}/tmpMotifDir
   if [ ! -d "MCLUSTERresults" ] ; then
     mkdir MCLUSTERresults
+  else
+    if [ ! -d "Step4ResultsBACKUP" ] ; then
+      mv MCLUSTERresults Step4ResultsBACKUP
+      mkdir MCLUSTERresults
+      echo ""
+      echo "NOTE: Previous results in MCLUSTERresults are being saved in Step4ResultsBACKUP."
+      echo ""
+    else
+      echo "There are already previous MoVRs step 4 results in Step4ResultsBACKUP."
+      echo "Please discard or save elsewhere, as this rerun will save the present"
+      echo "MCLUSTERresults directory as Step4ResultsBACKUP before re-running step 4"
+      echo "with current parameters."
+      exit
+    fi
   fi
   FilteredMotifsFile="FilteredMotifs.meme"
   FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
@@ -697,7 +791,11 @@ if [ $runstep4 == 1 ] ; then
   if [[ $mclusters ]]; then
     echo "... motif clusters were successfully extracted."
   else
+    echo ""
     echo "No motif clusters were extracted. Please check output in ${outputdir}/tmpMotifDir/MCLUSTERresults."
+    echo "If no program errors occurred, then this means that no motif clusters were found at the"
+    echo "selected threshold of --minpresence = $minpresence.  You may wish to consider re-starting MoVRs"
+    echo "with a lower threshold and flag --startfromstep step4."
     exit 0
   fi
 
@@ -721,10 +819,10 @@ if [ $runstep4 == 1 ] ; then
 fi
 
 
-##########################################
-#Step 5 				 #
-#generate consensus motif for each group #
-##########################################
+#############################################
+#Step 5 				    #
+#Generate consensus motifs for each mcluster#
+#############################################
 
 if [ $runstep5 == 1 ] ; then
   echo "MoVRs: Now running step 5 (derivation of consensus motifs) ..."
@@ -734,9 +832,25 @@ if [ $runstep5 == 1 ] ; then
   cd ${outputdir}/tmpMotifDir/MCLUSTERresults
   echo "mcluster.*cmotif contains the consensus motifs for each mcluster" >> README.txt
 
+  if [ -e "mcluster1.cmotif" ] ; then
+    if [ ! -d "Step5ResultsBACKUP" ] ; then
+      mkdir Step5ResultsBACKUP
+      mv mcluster*.cmotif Step5ResultsBACKUP
+      echo ""
+      echo "NOTE: Previous results are being saved in Step5ResultsBACKUP."
+      echo ""
+    else
+      echo "There are already previous MoVRs step 5 results in Step5ResultsBACKUP."
+      echo "Please discard or save elsewhere, as this rerun will save the present"
+      echo "MotifSetReduce results as Step5ResultsBACKUP before re-running step 5 with"
+      echo "current parameters."
+      exit
+    fi
+  fi
+
   for file in mcluster*.meme ; do
-    echo "${installdir}/MoVRs_MotifSetReduce.pl -m $file > ${file/meme/cmotif}"
-    ${installdir}/MoVRs_MotifSetReduce.pl -m $file > ${file/meme/cmotif}
+    echo "${installdir}/MoVRs_MotifSetReduce.pl -m $file $MotifSetReduceOptions > ${file/meme/cmotif}"
+    ${installdir}/MoVRs_MotifSetReduce.pl -m $file $MotifSetReduceOptions > ${file/meme/cmotif}
     if [ "$?" -eq "1" ] ; then
       echo "Fatal error running MoVRs_MotifSetReduce.pl.  Please check."
       echo ""
@@ -765,6 +879,20 @@ if [ $runstep6 == 1 ] ; then
 
   if [ ! -d "${outputdir}/MoVRs_OutputDir" ] ; then
     mkdir ${outputdir}/MoVRs_OutputDir
+  else
+    if [ ! -d "Step6ResultsBACKUP" ] ; then
+      mv ${outputdir}/MoVRs_OutputDir ${outputdir}/Step6ResultsBACKUP
+      mkdir ${outputdir}/MoVRs_OutputDir
+      echo ""
+      echo "NOTE: Previous results in ${outputdir}/MoVRs_OutputDir are being saved in ${outputdir}/Step6ResultsBACKUP."
+      echo ""
+    else
+      echo "There are already previous MoVRs step 6 results in Step6ResultsBACKUP."
+      echo "Please discard or save elsewhere, as this rerun will save the present"
+      echo "MoVRs_OutputDir directory as Step6ResultsBACKUP before re-running step 6"
+      echo "with current parameters."
+      exit
+    fi
   fi
   if [ ! -d "${outputdir}/MoVRs_OutputDir/SeqLogoDir" ] ; then
     mkdir ${outputdir}/MoVRs_OutputDir/SeqLogoDir

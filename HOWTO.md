@@ -165,7 +165,7 @@ output directory, subdirectories _tmpTrainingDir_ and _tmpValidationDir_.
 ##### Step 2: [HOMER](http://homer.salk.edu/homer/) de novo motif finding in training sets
 This step will run the appropriate [HOMER](http://homer.salk.edu/homer/) motif
 finder on each of the training sets.  Records of this step are in _tmpTraingDir_, and
-final 9utput is deposited in the output subdirectory _tmpMotifDir_.
+final output is deposited in the output subdirectory _tmpMotifDir_.
 
 ##### Step 3:  Motif extraction, filtering, and comparison
 Run in the _tmpMotifDir_, this step processes the motifs produced by the
