@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: September 5, 2016.  Volker Brendel.
+# Last update: September 16, 2016.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -124,6 +124,11 @@ if [ -z "$*" ] ; then usage short ; exit 1 ; fi
 
 function readconfigfile {
 # Read the specified ($1) MoVRs configuration file:
+if [ ! -e "$1" ] ; then
+  echo ""
+  echo "Fatal error: MoVRs config file $1  does not exist.  Please check."
+  exit 1
+fi
 
 findMotifsOptions=`grep '^findMotifsOptions=' "$1" | awk -F"=" '{print $2}'`
 findMotifsGenomeOptions=`grep '^findMotifsGenomeOptions=' "$1" | awk -F"=" '{print $2}'`
@@ -252,6 +257,12 @@ while true ; do
       case "$2" in
         -*) echo "Please designate an output directory when using -o"; usage short; exit 1 ;;
          *) outputdir=$2 ; shift 2 ;;
+      esac ;;
+
+    -c|--configfile)
+      case "$2" in
+        -*) echo "Please provide a MoVRs configfile when using -c"; usage short; exit 1 ;;
+         *) configfile=$2 ; shift 2 ;;
       esac ;;
 
     --startfromstep)
