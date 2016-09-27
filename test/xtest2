@@ -1,6 +1,9 @@
 #This example requires that hg19 has been install for HOMER; something equivalent to the following
 #should have been run first:
-#	sudo perl /usr/local/src/HOMER/configureHomer.pl -install hg19
 #
+#	sudo perl /usr/local/src/HOMER/configureHomer.pl -install hg19
+#	sudo perl chmod -R a+w /usr/local/src/HOMER/data
+#
+#Alternatively, you may have run xpretest beforehand ...
 
  time ../scripts/MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2

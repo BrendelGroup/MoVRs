@@ -1,23 +1,13 @@
 ================================================================================
-VB Notes August 10:
+VB Notes September 26:
 
 Some examples, just to test program options and flow.
 You should read the xtest* scripts before executing, and they are meant in part
 to be run in sequence.
-Documentation will be need to be provided.
+You could run "xpretest" first to take care of adding the HOMER hg19 genome sets.
+Documentation will need to be provided.
 The examples assume at least 10 CPUs are available.  If not, adjust the -p argument.
 
-Also, there are still loose ends in the MoVRs script, including
- - reading of the *.conf file
- - error handling
- - message content
- - description that numproc should ideally be a multiple of kfold
-
-Not added to the scripts directory is a check configuration script to test
-for requisite programs and packages (prototype in preparation).
-
-Also we need to describe ananconda and then creating a python environment
-with conda.
 Output documentation is still missing, as well as the finding of our motifs in
 the validation sets as last step of MoVRs.
 ================================================================================

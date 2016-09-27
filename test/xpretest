@@ -1,0 +1,12 @@
+#Some of the examples require pre-installed HOMER genome data.
+#
+#You can see what has been installed system-wide using the following command
+# (look for a + symbol in the first column):
+#
+perl /usr/local/src/HOMER/configureHomer.pl -list
+
+#If you need to make the hg19 data sets available, do so as follows:
+#
+sudo perl /usr/local/src/HOMER/configureHomer.pl -install hg19
+sudo perl chmod -R a+w /usr/local/src/HOMER/data
+sudo perl /usr/local/src/HOMER/configureHomer.pl -install human-p

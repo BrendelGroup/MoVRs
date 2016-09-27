@@ -1,5 +1,8 @@
 #This example requires that the human promoter set has been installed for HOMER; something equivalent to the following
 #should have been run first:
+#
 #	sudo perl /usr/local/src/HOMER/configureHomer.pl -install human-p
 #
+#Alternatively, you may have run xpretest beforehand ...
+
  time ../scripts/MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 --minpresence 2 -p 8 --outputdir TEST4 >& errTEST4
