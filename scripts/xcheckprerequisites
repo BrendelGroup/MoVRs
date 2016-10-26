@@ -17,7 +17,7 @@ echo ""
 type shuf
 if [ "$?" -eq "1" ] ; then
 	echo "shuf is not available."
-	echo "Please check that 'GNU coreutils' is installed on your system."
+	echo "Please check that 'GNU coreutils' is properly installed on your system."
 	exit 1
 else
 	which shuf
@@ -28,7 +28,7 @@ echo ""
 type sem
 if [ "$?" -eq "1" ] ; then
 	echo "sem aka. parallel --semaphore is not available."
-	echo "Please check that 'GNU parallel' installed on your system."
+	echo "Please check that 'GNU parallel' is properly installed on your system."
 	exit 1
 else
 	which sem
@@ -40,7 +40,7 @@ echo ""
 type perl 
 if [ "$?" -eq "1" ] ; then
 	echo "perl is not available."
-	echo "Please check that 'perl' installed on your system."
+	echo "Please check that 'perl' is properly installed on your system."
 	exit 1
 else
 	perl --version
@@ -51,7 +51,7 @@ echo ""
 type python
 if [ "$?" -eq "1" ] ; then
 	echo "python is not available."
-	echo "Please check that 'R' installed on your system."
+	echo "Please check that 'python' is properly installed on your system."
 	exit 1
 else
 	python --version
@@ -64,7 +64,7 @@ echo ""
 type Rscript
 if [ "$?" -eq "1" ] ; then
 	echo "Rscript is not available."
-	echo "Please check that 'R' installed on your system."
+	echo "Please check that 'R/Rscript' are properly installed on your system."
 	exit 1
 else
 	which Rscript
@@ -166,7 +166,8 @@ echo "Checking on HOMER scripts:"
 echo ""
 type annotatePeaks.pl findMotifs.pl findMotifsGenome.pl
 if [ "$?" -eq "1" ] ; then
-	echo "HOMER not correctly configured. bin folder should be added to environment path"	
+	echo "HOMER is not correctly configured."
+        echo "Note that the HOMER bin folder should have been added to your bash environment path."	
 	exit 1
 else
 	which annotatePeaks.pl findMotifs.pl findMotifsGenome.pl
@@ -183,7 +184,8 @@ echo ""
 # MoVRs
 type MoVRs MoVRs_Consensus2homer.py MoVRs_ExtractMotif.py MoVRs_GetCluster.py MoVRs_Motif2meme.R MoVRs_MotifSetReduce.pl MoVRs_SeqLogo4mcluster.R MoVRs_Split.sh
 if [ "$?" -eq "1" ];then
-	echo "The bin/ directory is not added to PYTHONPATH"
+	echo "The MoVRs bin directory does not appear to be in your bash environment path."
+d
 	exit 1
 else
 	which MoVRs MoVRs_Consensus2homer.py MoVRs_ExtractMotif.py MoVRs_GetCluster.py MoVRs_Motif2meme.R MoVRs_MotifSetReduce.pl MoVRs_SeqLogo4mcluster.R MoVRs_Split.sh
@@ -202,4 +204,3 @@ echo "We would still recommend that you scroll over the messages printed out by 
 echo "script and confirm that everything is to your liking."
 
 echo ""
-
