@@ -1,3 +1,3 @@
-#time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10                                       >& errTEST1
+#time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 5                                       >& errTEST1
  \cp -r TEST1 TEST1ORIG
- time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10 --minpresence 7 --startfromstep step4 >& errTEST1AGAIN
+ time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 5 --minpresence 7 --startfromstep step4 >& errTEST1AGAIN

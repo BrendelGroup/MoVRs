@@ -6,4 +6,4 @@
 #
 #Alternatively, you may have run xpretest beforehand ...
 
- time ../scripts/MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 10 >& errTEST2
+ time ../scripts/MoVRs -a testpeakfile -G hg19 -o TEST2 --size [-60,40] -k 5 -p 5 >& errTEST2

@@ -1,1 +1,1 @@
- time ../scripts/MoVRs -f testfastafile -b Background/testbackground -S 10 -k 3 -p 9 --outputdir TEST3 >& errTEST3
+ time ../scripts/MoVRs -f testfastafile -b Background/testbackground -S 10 -k 3 -p 6 --outputdir TEST3 >& errTEST3
