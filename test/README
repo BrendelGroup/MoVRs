@@ -6,7 +6,7 @@ You should read the xtest* scripts before executing, and they are meant in part
 to be run in sequence.
 You could run "xpretest" first to take care of adding the HOMER hg19 genome sets.
 Documentation will need to be provided.
-The examples assume at least 10 CPUs are available.  If not, adjust the -p argument.
+The examples assume at least 6 CPUs are available.  If not, adjust the -p argument.
 
 Output documentation is still missing, as well as the finding of our motifs in
 the validation sets as last step of MoVRs.

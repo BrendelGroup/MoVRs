@@ -4,4 +4,4 @@
 #   the real job ...)
  head -1 testpeakfile > scratchpeakfile
  findMotifsGenome.pl scratchpeakfile ./TestGenome scratchmedir -size -60,40 -S 1 -noknown -nocheck -preparse; \rm -rf scratchpeakfile scratchmedir
- time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 10 >& errTEST1
+ time ../scripts/MoVRs -a testpeakfile --genome ./TestGenome -o TEST1 --size [-60,40] -p 5 >& errTEST1

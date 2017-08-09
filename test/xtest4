@@ -5,4 +5,4 @@
 #
 #Alternatively, you may have run xpretest beforehand ...
 
- time ../scripts/MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 --minpresence 2 -p 8 --outputdir TEST4 >& errTEST4
+ time ../scripts/MoVRs -i testidfile -r human -G hg19 --size [-200,100] -S 15 -k 4 --minpresence 2 -p 4 --outputdir TEST4 >& errTEST4
