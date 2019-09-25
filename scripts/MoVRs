@@ -976,8 +976,8 @@ if [ $runstep7 == 1 ] ; then
     fi
 
     if [[ $input == 'geneIDfile' ]] ; then
-      echo "annotatePeaks.pl ${workingdir}/$geneIDfile $genomeID -m $file $annotatePeaksOptions 2> $logfile 1> $outfile"
-      sem -j $numproc "annotatePeaks.pl ${workingdir}/$geneIDfile $genomeID -m $file $annotatePeaksOptions 2> $logfile 1> $outfile; echo done with annotatePeaks.pl for ${file} ...;"
+      echo "annotatePeaks.pl tss $genomeID -list ${workingdir}/$geneIDfile -m $file $annotatePeaksOptions 2> $logfile 1> $outfile"
+      sem -j $numproc "annotatePeaks.pl tss $genomeID -list ${workingdir}/$geneIDfile -m $file $annotatePeaksOptions 2> $logfile 1> $outfile; echo done with annotatePeaks.pl for ${file} ...;"
     fi
 
   done
