@@ -19,8 +19,7 @@ document.  Once all preparatory steps are taken care of, see the
 
 ## Reference
 
-Xianyu Yao, R. Taylor Raborn, and Volker P. Brendel (2016) _MoVRs:
-DNA motif set reduction and validation._ To be submitted.
+Volker P. Brendel (2019) _MoVRs: DNA motif set reduction and validation._ To be submitted.
 
 ## Contact
 

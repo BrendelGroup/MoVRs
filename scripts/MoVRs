@@ -2,7 +2,7 @@
 # MoVRs:  a bash script to run the MoVRs workflow.
 #              Motif set reduction and validation.
 #
-# Last update: September 16, 2016.  Volker Brendel.
+# Last update: September 24, 2019.  Volker Brendel.
 #
 
 debug=false	# set to true for code development
@@ -785,7 +785,7 @@ if [ $runstep4 == 1 ] ; then
   FilteredMotifsFile="FilteredMotifs.meme"
   FilteredMotifsFileFP=$(readlink -f ${FilteredMotifsFile})
 
-  cut -f 1,2 TOMTOMresults/tomtom.txt > motifgraph_edgelist
+  cut -f 1,2 TOMTOMresults/tomtom.tsv > motifgraph_edgelist
   mv motifgraph_edgelist MCLUSTERresults/
   cd MCLUSTERresults
   echo "MCLUSTERresults contains results of motif clustering and merging" >> README.txt
