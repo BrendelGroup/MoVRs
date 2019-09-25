@@ -4,7 +4,7 @@
 
 At this stage, you should have completed the __MoVRs__ installation steps
 documented in the [INSTALL](./INSTALL.md) document.  Here we explain
-basic use of __MoVRS__ with the test (toy) data provided in the [test](../test)
+basic use of __MoVRs__ with the test (toy) data provided in the [test](../test)
 directory.  For research applications, please see our
 [publication](http://brendelgroup.org/).
 
@@ -15,7 +15,7 @@ concepts:
 * define __background__ sequences, i.e. genomic (or "random") sequences not expected to contain the specific DNA motifs
 * identify over-represented patterns in __roi__ versus __background__ as candidate (biologically meaningful) motifs
 
-There nice programs available to do just that.  __MoVRs__ is built
+There are nice programs available to do just that.  __MoVRs__ is built
 around the [HOMER](http://homer.salk.edu/homer/) software.  You can
 easily adopt __MoVRs__ to work with other programs - after all,
 __MoVRs__ is just a Linux _bash_ script wrapped around existing
@@ -30,7 +30,7 @@ research examples are provided in our
 [publication](http://brendelgroup.org/).  This document reviews the mechanics of running __MoVRs__.
 
 ## Input
-To get going, simply type MoVRs on your commandline, with result as follows:
+To get going, simply type MoVRs on your commandline, which should result in the following:
 
 ```
 MoVRs
