@@ -543,7 +543,7 @@ if [ $runstep1 == 1 ] ; then
   fi
 
   if [[ $input == 'fastafile' ]] ; then
-    grep "^>" $fastafile | cut -c2- > tmp.txt	#ignore comment lines
+    grep "^>" $fastafile | cut -c2- | cut -d" " -f1 > tmp.txt	#ignore comments
     shuf -o tmp.new tmp.txt
     echo ""
     echo "MoVRs_Split.sh tmp.new $kfold tmplist ..."
